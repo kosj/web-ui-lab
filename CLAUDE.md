@@ -8,7 +8,7 @@
 - `knowledge/references.md` — 출처가 달린 레퍼런스와 디자인 규칙
 - `knowledge/motion.md` — 모션 조사와 규칙 (모션을 넣거나 바꿀 때)
 - `knowledge/user-signals.md` — 채팅 제보·TCP 재전송 상관 분석 방법 (유저 신호를 다룰 때)
-- `knowledge/styles.md` — 스타일 프리셋 5종의 레퍼런스·구조·예외 (스타일을 바꾸거나 추가할 때)
+- `knowledge/styles.md` — 스타일 프리셋 5종의 레퍼런스·구조·예외 (스타일을 바꾸거나 추가할 때). 기본 스타일은 콕핏
 
 ## 구조
 - `design-system/` — 공용 토큰(`tokens.css`, 다크 우선), 모션 토큰(`motion.css`), 스타일 프리셋(`styles.css`), 베이스 스타일

@@ -2120,3 +2120,11 @@ h3 {
     display: none;
   }
 }
+
+.style-default {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--ink-3);
+}

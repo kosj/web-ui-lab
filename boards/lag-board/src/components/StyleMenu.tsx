@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Palette } from 'lucide-react';
-import { STYLE_BY_ID, STYLES, type StyleId } from '../lib/style';
+import { DEFAULT_STYLE, STYLE_BY_ID, STYLES, type StyleId } from '../lib/style';
 
 /** 스타일 고르기 — 견본 색 3개와 한 줄 설명. Esc·바깥 클릭으로 닫힌다. */
 export function StyleMenu({ style, onStyle }: { style: StyleId; onStyle: (s: StyleId) => void }) {
@@ -52,7 +52,7 @@ export function StyleMenu({ style, onStyle }: { style: StyleId; onStyle: (s: Sty
                 <i style={{ background: s.swatch[2] }} />
               </span>
               <span className="style-text">
-                <b>{s.name}</b>
+                <b>{s.name}{s.id === DEFAULT_STYLE && <em className="style-default">기본</em>}</b>
                 <span>{s.hint}{s.themes.length === 1 ? ` · ${s.themes[0] === 'dark' ? '다크' : '라이트'} 전용` : ''}</span>
               </span>
               {s.id === style && <Check size={16} strokeWidth={2.6} aria-hidden className="style-check" />}

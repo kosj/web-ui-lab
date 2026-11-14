@@ -17,9 +17,12 @@ export interface StyleMeta {
   swatch: [string, string, string];
 }
 
+/** 기본 스타일 — 관제 화면의 원거리 판독성을 우선해 콕핏 (2026-11-14 결정, knowledge/styles.md) */
+export const DEFAULT_STYLE: StyleId = 'cockpit';
+
 export const STYLES: StyleMeta[] = [
-  { id: 'graphite', name: '그래파이트', hint: '차분한 슬레이트 · 무채색 크롬', themes: ['dark', 'light'], swatch: ['#10141b', '#e8edf5', '#ec835a'] },
   { id: 'cockpit', name: '콕핏', hint: '조종석 글래스 콕핏 · B612 · 청록 라벨', themes: ['dark'], swatch: ['#020406', '#f4f8fb', '#4fd6ff'] },
+  { id: 'graphite', name: '그래파이트', hint: '차분한 슬레이트 · 무채색 크롬', themes: ['dark', 'light'], swatch: ['#10141b', '#e8edf5', '#ec835a'] },
   { id: 'terminal', name: '터미널', hint: '앰버 인광 · 등폭 숫자 · 고밀도', themes: ['dark'], swatch: ['#000000', '#ffd27a', '#ffb000'] },
   { id: 'editorial', name: '에디토리얼', hint: '스위스 그리드 · 괘선 · 큰 활자', themes: ['light'], swatch: ['#fafaf9', '#0a0a0a', '#d6001c'] },
   { id: 'glass', name: '글래스', hint: '반투명 패널 · 오로라 배경', themes: ['dark', 'light'], swatch: ['#121a33', '#f6f8ff', '#a35ee0'] },
@@ -38,7 +41,7 @@ function readInitial(): StyleId {
   } catch {
     /* noop */
   }
-  return 'graphite';
+  return DEFAULT_STYLE;
 }
 
 export function useStylePref() {
