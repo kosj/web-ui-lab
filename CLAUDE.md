@@ -18,6 +18,13 @@
 - 개발: `npm run dev:lag` · 빌드: `npm run build:lag` · 테스트: `npm test`
 - 시각 QA: 빌드 → `npx vite preview` → `node tools/ui-shot.cjs <url> <png> <w> <h> <theme> full`
 
+## Git 규칙
+- 기본 브랜치는 `main`. 작업은 작업 브랜치에서 하고 `main`에 머지한다
+- **머지가 끝나면 작업 브랜치는 무조건 삭제한다** (원격·로컬 모두, 예외 없음)
+  - 삭제 전 확인: 작업 브랜치의 모든 커밋이 `main`에 들어갔는지 `git merge-base --is-ancestor <작업 브랜치> origin/main`으로 확인
+  - 작업 브랜치가 GitHub 기본 브랜치로 지정돼 있으면 삭제가 거부되므로, 먼저 기본 브랜치를 `main`으로 바꾼 뒤 삭제
+  - 다음 작업은 최신 `main`에서 새 작업 브랜치를 만들어 시작
+
 ## 규칙
 - UI 문구는 한국어 위주(지표 약어 p95, RTT 등은 그대로)
 - 색은 데이터와 상태에만, 크롬은 무채색. 범주색은 dataviz 검증기로 확인
