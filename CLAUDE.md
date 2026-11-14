@@ -10,13 +10,15 @@
 - `knowledge/user-signals.md` — 채팅 제보·TCP 재전송 상관 분석 방법 (유저 신호를 다룰 때)
 - `knowledge/styles.md` — 스타일 프리셋 5종의 레퍼런스·구조·예외 (스타일을 바꾸거나 추가할 때). 기본 스타일은 콕핏
 - `knowledge/command-center.md` — 커맨드 센터(기본 첫 화면)의 레퍼런스·배치·지도·모션 규칙 (화려한/동적인 화면, 지도, 벽 화면을 다룰 때)
+- `knowledge/broadcast.md` — 라이브 중계(타이밍 타워·관제 메시지·자막·하이라이트)의 레퍼런스와 규칙 (순위·사건 중심 화면을 다룰 때)
+- `docs/index.html` — UI 후보 비교 갤러리. 스타일 결정 중이므로 **후보 화면은 교체하지 말고 추가·보존**한다
 
 ## 구조
 - `design-system/` — 공용 토큰(`tokens.css`, 다크 우선), 모션 토큰(`motion.css`), 스타일 프리셋(`styles.css`), 베이스 스타일
 - `boards/<name>/` — 보드별 Vite + React + TS 앱 (ECharts)
-  - 렉 보드는 화면 2개: 커맨드 센터 `src/command/`(기본, `#command`) · 분석 보드 `src/components/`(`#analysis`, `#style-<id>`)
+  - 렉 보드는 화면 3개(UI 후보): 커맨드 센터 `src/command/`(기본, `#command`) · 라이브 중계 `src/broadcast/`(`#broadcast`) · 분석 보드 `src/components/`(`#analysis`, `#style-<id>`)
 - `knowledge/` — 조사 노트와 학습 로그
-- `tools/ui-shot.cjs` — Playwright 시각 QA 스크린샷
+- `tools/ui-shot.cjs` — Playwright 시각 QA 스크린샷 · `tools/view-shots.cjs` — 화면 후보 3종 데스크톱·모바일 스크린샷 (`docs/shots`)
 
 ## 명령
 - 개발: `npm run dev:lag` · 빌드: `npm run build:lag` · 테스트: `npm test`

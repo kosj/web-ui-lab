@@ -1,0 +1,266 @@
+<title>렉 보드 UI 후보</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Inter+Tight:wght@500;600;800&display=swap">
+<style>
+  /* 레이아웃: 결론(비교표·고르는 법) → 화면 후보별 스크린샷·영상·장단점 → 분석 보드 스타일 5종 → 결정 기록.
+     스타일 비교 갤러리(style-gallery)와 같은 조용한 문서 크롬 — 스크린샷이 주인공이다. */
+  :root {
+    --bg: #f6f6f4;
+    --paper: #ffffff;
+    --ink: #111214;
+    --ink-2: #44464c;
+    --ink-3: #6b6e76;
+    --line: rgba(17, 18, 20, 0.12);
+    --line-strong: rgba(17, 18, 20, 0.85);
+    --chip: #ececea;
+    --link: #1d4fd8;
+    --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+    --display: 'Inter Tight', 'IBM Plex Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0e10; --paper: #15171a; --ink: #eceef2; --ink-2: #b6bac3; --ink-3: #8a8f99;
+      --line: rgba(236, 238, 242, 0.12); --line-strong: rgba(236, 238, 242, 0.8); --chip: #23262b; --link: #8fb0ff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0e10; --paper: #15171a; --ink: #eceef2; --ink-2: #b6bac3; --ink-3: #8a8f99;
+    --line: rgba(236, 238, 242, 0.12); --line-strong: rgba(236, 238, 242, 0.8); --chip: #23262b; --link: #8fb0ff;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.65 var(--font);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-block: 48px 96px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    border-top: 6px solid var(--line-strong);
+    padding-top: 18px;
+  }
+  .lede { margin: 14px 0 0; max-width: 68ch; color: var(--ink-2); font-size: 17px; }
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);
+  }
+  a { color: var(--link); text-underline-offset: 3px; }
+  a:focus-visible, video:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+
+  .table-wrap { overflow-x: auto; margin-top: 40px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+  caption { text-align: left; font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; padding-bottom: 10px; }
+  th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { font-family: var(--display); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; border-bottom-color: var(--line-strong); }
+  tbody th { font-weight: 700; white-space: nowrap; }
+  code { font-size: 13px; padding: 1px 6px; border-radius: 4px; background: var(--chip); }
+
+  .ask {
+    margin-top: 40px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .ask article { border-top: 2px solid var(--line-strong); padding-top: 12px; }
+  .ask h3 { font-size: 18px; letter-spacing: -0.02em; }
+  .ask p { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; }
+
+  .cand {
+    margin-top: 80px;
+    border-top: 6px solid var(--line-strong);
+    padding-top: 18px;
+    display: grid;
+    gap: 20px;
+  }
+  .cand-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+  .cand-head h2 { font-family: var(--display); font-size: clamp(28px, 3.6vw, 40px); font-weight: 800; letter-spacing: -0.035em; }
+  .cand-head .tag { font-size: 13px; color: var(--ink-3); }
+  .cand-head .hash { margin-left: auto; font-size: 13px; color: var(--ink-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--chip); color: var(--ink-2); }
+  .shots { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 200px; align-items: start; }
+  figure { margin: 0; min-width: 0; }
+  figure img, figure video {
+    display: block; width: 100%; height: auto; max-width: 100%;
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 0 0 1px var(--line), 0 18px 40px rgba(0, 0, 0, 0.12);
+  }
+  figcaption { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+  .cols { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .cols h3 { font-size: 15px; margin-bottom: 6px; }
+  .cols ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; color: var(--ink-2); font-size: 14px; }
+  .refs { font-size: 13px; color: var(--ink-3); margin: 0; }
+  .refs a { color: var(--ink-2); }
+
+  .presets { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .presets figure img { border-radius: 8px; }
+  .presets b { display: block; font-size: 15px; color: var(--ink); margin-top: 6px; }
+
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  .log li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .log .v { font-family: var(--display); font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .log p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .log b { color: var(--ink); }
+  footer { margin-top: 80px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--ink-3); font-size: 13px; }
+
+  @media (max-width: 760px) {
+    .shots { grid-template-columns: minmax(0, 1fr) 132px; }
+    .cand-head .hash { margin-left: 0; width: 100%; }
+  }
+  @media (max-width: 460px) {
+    .shots { grid-template-columns: minmax(0, 1fr); }
+    .shots figure:last-child { max-width: 220px; }
+  }
+</style>
+
+<div class="wrap">
+  <span class="eyebrow">렉 보드 · 화면 후보 기록</span>
+  <h1>렉 보드 UI 후보</h1>
+  <p class="lede">같은 가상 데이터(2026-11-14 21:00 KST, 6개 권역 36개 서버)를 세 가지 화면 문법으로 만든 후보들입니다. 어떤 스타일로 갈지 정하는 과정이라 지금까지 만든 화면을 모두 남겨 두었습니다. 보드 상단의 화면 전환 버튼이나 주소의 <code>#command</code> · <code>#broadcast</code> · <code>#analysis</code>로 같은 시각을 나란히 볼 수 있습니다.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>한눈에 비교</caption>
+      <thead>
+        <tr><th scope="col">후보</th><th scope="col">무엇이 주인공인가</th><th scope="col">움직임이 말하는 것</th><th scope="col">색 쓰는 법</th><th scope="col">맞는 자리</th><th scope="col">주요 레퍼런스</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">커맨드 센터</th><td>세계 흐름 지도</td><td>트래픽 흐름: 입자 속도는 RTT, 흩어짐은 지터, 사라짐은 손실</td><td>정상도 색(살아 있음), 강한 색은 경보에만</td><td>관제실 벽, 시연</td><td>GitHub 지구본, Cloudflare Radar, 영화 FUI</td></tr>
+        <tr><th scope="row">라이브 중계</th><td>타이밍 타워 · ON AIR</td><td>순위와 사건: 타워 재정렬, 자막, 관제 메시지</td><td>정상은 회색, 색이 보이면 일이 났다</td><td>장애 대응 중 공유 화면, 사후 리뷰</td><td>F1 중계, Riot Worlds, Fox IndyCar·NASCAR</td></tr>
+        <tr><th scope="row">분석 보드</th><td>시간 축 차트와 근거</td><td>시간 커서와 재생</td><td>스타일 프리셋 5종 (기본 콕핏)</td><td>데스크, 원인 분석</td><td>관측성 대시보드 규칙, 항공 콕핏</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="ask" aria-label="고르는 법">
+    <article>
+      <span class="eyebrow">누가 보나</span>
+      <h3>벽 화면이면 커맨드 센터 또는 중계</h3>
+      <p>여러 사람이 3m 밖에서 보는 화면은 한 가지 질문에 크게 답해야 합니다. 분석 보드는 앉아서 파고들 때 씁니다.</p>
+    </article>
+    <article>
+      <span class="eyebrow">어떤 질문에 답하나</span>
+      <h3>"어디가?"는 지도, "누가 제일?"은 타워</h3>
+      <p>권역·통신사 단위 장애가 많으면 지도가, 서버 단위 장애와 순서가 중요하면 순위가 빨리 읽힙니다.</p>
+    </article>
+    <article>
+      <span class="eyebrow">함께 쓰기</span>
+      <h3>둘 다 분석 보드로 이어진다</h3>
+      <p>세 화면은 같은 모델을 공유합니다. 장애 카드의 "분석 보드" 버튼은 그 장애를 고른 채 분석 보드를 엽니다.</p>
+    </article>
+  </section>
+
+  <section class="cand" id="command" aria-labelledby="h-command">
+    <div class="cand-head">
+      <h2 id="h-command">커맨드 센터</h2>
+      <span class="tag">v0.6 · 지금 첫 화면</span>
+      <span class="hash"><a href="https://claude.ai/artifact/XTBbYtdHxZTJ94sDMJYNbk#command">보드에서 열기</a> · <code>#command</code></span>
+    </div>
+    <div class="chips"><span class="chip">네온 HUD</span><span class="chip">세계 흐름 지도</span><span class="chip">Chakra Petch</span><span class="chip">다크 전용</span></div>
+    <div class="shots">
+      <figure>
+        <img src="shots/command-1440.jpg" alt="커맨드 센터: 왼쪽 게이지·수치·원인 이퀄라이저, 가운데 점묘 세계 지도에 권역 노드와 통신사 입자 흐름, 아래 장애 피드·권역 포드·24시간 리본" width="2880" height="1800" loading="lazy">
+        <figcaption>1440 × 900 첫 화면. 한국 랙 R2 인프라 장애가 진행 중이라 동아시아 대륙 점이 주황으로 물들었습니다.</figcaption>
+      </figure>
+      <figure>
+        <img src="shots/command-390.jpg" alt="커맨드 센터 모바일 첫 화면" width="780" height="1688" loading="lazy">
+        <figcaption>390 폭</figcaption>
+      </figure>
+    </div>
+    <figure>
+      <video src="media/command-center.mp4" poster="shots/command-1440.jpg" controls muted playsinline preload="none" aria-label="커맨드 센터 데모 영상"></video>
+      <figcaption>28초 데모: 등장 시퀀스, 한국 선택, 동남아 케이블 장애 재생, 최근 3시간 재생.</figcaption>
+    </figure>
+    <div class="cols">
+      <div><h3>강점</h3><ul><li>어디서 무슨 일이 나는지 위치로 즉시 보입니다</li><li>움직임이 전부 측정값이라 정상일 때도 "살아 있음"이 보입니다</li><li>통신사 경로 장애를 이름과 증가분으로 짚어 줍니다 (PLDT +481ms)</li></ul></div>
+      <div><h3>약점</h3><ul><li>서버 단위 순위·근거는 적고, 지도 면적 대비 정보 밀도가 낮습니다</li><li>모바일에서는 지도가 작아 카드 중심으로 읽힙니다</li><li>정상에도 색을 써서 화면 전체 색 수가 많습니다</li></ul></div>
+    </div>
+    <p class="refs">근거: <a href="https://github.blog/engineering/engineering-principles/how-we-built-the-github-globe/">GitHub 지구본</a> · <a href="https://blog.cloudflare.com/radar-redesign/">Cloudflare Radar 개편</a> · <a href="https://www.pushing-pixels.org/?p=18414">Mark Coleran 인터뷰</a> · 저장소 <code>knowledge/command-center.md</code></p>
+  </section>
+
+  <section class="cand" id="broadcast" aria-labelledby="h-broadcast">
+    <div class="cand-head">
+      <h2 id="h-broadcast">라이브 중계</h2>
+      <span class="tag">v0.7 · 새 후보</span>
+      <span class="hash"><a href="https://claude.ai/artifact/XTBbYtdHxZTJ94sDMJYNbk#broadcast">보드에서 열기</a> · <code>#broadcast</code></span>
+    </div>
+    <div class="chips"><span class="chip">레이스 중계 그래픽</span><span class="chip">타이밍 타워</span><span class="chip">Barlow Condensed</span><span class="chip">흑백 + 깃발색</span></div>
+    <div class="shots">
+      <figure>
+        <img src="shots/broadcast-1440.jpg" alt="라이브 중계: 위 권역 점수판, 왼쪽 타이밍 타워, 가운데 ON AIR 서버와 텔레메트리, 오른쪽 관제 메시지, 아래 세션 막대와 하이라이트 카드, 자막 한 줄" width="2880" height="1800" loading="lazy">
+        <figcaption>1440 × 900 첫 화면. 20:31에 격상된 한국 랙 R2 장애가 자막으로 떠 있고, ON AIR는 타워 1위 KR-05를 잡았습니다.</figcaption>
+      </figure>
+      <figure>
+        <img src="shots/broadcast-390.jpg" alt="라이브 중계 모바일 첫 화면" width="780" height="1688" loading="lazy">
+        <figcaption>390 폭</figcaption>
+      </figure>
+    </div>
+    <figure>
+      <video src="media/broadcast.mp4" poster="shots/broadcast-1440.jpg" controls muted playsinline preload="none" aria-label="라이브 중계 데모 영상"></video>
+      <figcaption>36초 데모: 등장, 타워에서 서버 고정, 하이라이트 연속 재생(JP-03 → 동남아 → LG U+ → 클라 → 한국 랙 R2).</figcaption>
+    </figure>
+    <div class="cols">
+      <div><h3>강점</h3><ul><li>"지금 가장 나쁜 서버"를 순위로 바로 답합니다</li><li>감지·격상·해소가 관제 메시지와 자막으로 쌓여 장애 흐름을 공유하기 좋습니다</li><li>정상은 회색이라 색이 보이면 곧 이상입니다. 좁은 고딕 큰 숫자는 멀리서도 읽힙니다</li><li>하이라이트 재생으로 하루를 30초에 되짚습니다</li></ul></div>
+      <div><h3>약점</h3><ul><li>지리 정보가 없어 권역·통신사 확산은 점수판으로만 보입니다</li><li>순위는 5분 평균 기준이라 순간 급변은 ON AIR에서 봐야 합니다</li><li>자동 연출이 화면을 바꾸므로 조작 중에는 고정 버튼이 필요합니다</li></ul></div>
+    </div>
+    <p class="refs">근거: <a href="https://www.blackbookmotorsport.com/features/dixonbaxi_the_business_behind_formula_ones_broadcast_branding/">DixonBaxi의 F1 중계 그래픽</a> · <a href="https://www.newscaststudio.com/2025/03/21/indycar-on-fox-broadcast-design/">Fox IndyCar 개편</a> · <a href="https://www.stashmedia.tv/tendril-ramps-up-riot-worlds-2022-with-branding-toolkit/">Tendril의 Worlds 2022</a> · <a href="https://www.schoolofmotion.com/blog/sports-lower-thirds">스포츠 자막 가이드</a> · 저장소 <code>knowledge/broadcast.md</code></p>
+  </section>
+
+  <section class="cand" id="analysis" aria-labelledby="h-analysis">
+    <div class="cand-head">
+      <h2 id="h-analysis">분석 보드</h2>
+      <span class="tag">v0.1–v0.5 · 스타일 5종</span>
+      <span class="hash"><a href="https://claude.ai/artifact/XTBbYtdHxZTJ94sDMJYNbk#analysis">보드에서 열기</a> · <code>#analysis</code> · <code>#style-&lt;이름&gt;</code></span>
+    </div>
+    <div class="chips"><span class="chip">원인 판별 근거</span><span class="chip">분포 히트맵</span><span class="chip">유저 제보 × TCP 재전송</span><span class="chip">기본 콕핏</span></div>
+    <div class="shots">
+      <figure>
+        <img src="shots/analysis-1440.jpg" alt="분석 보드 콕핏 스타일 첫 화면: 요약 띠, KPI 6개, 권역 히트맵과 장애 판정" width="2880" height="1800" loading="lazy">
+        <figcaption>콕핏 스타일(기본) 첫 화면. 아래로 원인 분해, 유저 체감 신호, 통신사 드릴다운, 지연 분포, 서버 그리드가 이어집니다.</figcaption>
+      </figure>
+      <figure>
+        <img src="shots/analysis-390.jpg" alt="분석 보드 모바일 첫 화면" width="780" height="1688" loading="lazy">
+        <figcaption>390 폭</figcaption>
+      </figure>
+    </div>
+    <div class="presets" aria-label="분석 보드 스타일 5종">
+      <figure><img src="style-gallery/cockpit-dark.jpg" alt="콕핏 스타일" width="2880" height="1800" loading="lazy"><figcaption><b>콕핏 (기본)</b>항공 글래스 콕핏 · B612 · 청록 라벨</figcaption></figure>
+      <figure><img src="style-gallery/graphite-dark.jpg" alt="그래파이트 스타일" width="2880" height="1800" loading="lazy"><figcaption><b>그래파이트</b>차분한 슬레이트 · 무채색 크롬</figcaption></figure>
+      <figure><img src="style-gallery/terminal-dark.jpg" alt="터미널 스타일" width="2880" height="1800" loading="lazy"><figcaption><b>터미널</b>앰버 인광 · 등폭 숫자 · 고밀도</figcaption></figure>
+      <figure><img src="style-gallery/editorial-light.jpg" alt="에디토리얼 스타일" width="2880" height="1800" loading="lazy"><figcaption><b>에디토리얼</b>스위스 그리드 · 괘선 · 큰 활자</figcaption></figure>
+      <figure><img src="style-gallery/glass-dark.jpg" alt="글래스 스타일" width="2880" height="1800" loading="lazy"><figcaption><b>글래스</b>반투명 패널 · 오로라 배경</figcaption></figure>
+    </div>
+    <p class="refs">스타일별 근거와 비교표: 저장소 <code>knowledge/styles.md</code>, <code>docs/style-gallery/</code></p>
+  </section>
+
+  <section class="cand" aria-labelledby="h-log">
+    <div class="cand-head"><h2 id="h-log">결정 기록</h2></div>
+    <ol class="log">
+      <li><span class="v">v0.5</span><p>분석 보드에 스타일 프리셋 5종을 추가했습니다. <b>콕핏을 기본값</b>으로 정했습니다.</p></li>
+      <li><span class="v">v0.6</span><p>배치와 스타일을 완전히 새로 짠 <b>커맨드 센터</b>를 첫 화면으로 추가했습니다. 분석 보드는 한 번의 클릭 거리에 남겼습니다.</p></li>
+      <li><span class="v">v0.7</span><p>다른 레퍼런스(레이스·e스포츠 중계)로 <b>라이브 중계</b>를 추가했습니다. 첫 화면은 그대로 커맨드 센터이고, 최종 선택은 아직 정하지 않았습니다.</p></li>
+    </ol>
+  </section>
+
+  <footer>모든 수치는 가상 데이터입니다. 화면 후보의 원본은 저장소 <code>boards/lag-board/src/command</code> · <code>src/broadcast</code> · <code>src/components</code>에 있고, 스크린샷은 <code>node tools/view-shots.cjs docs/shots</code>로 다시 찍을 수 있습니다.</footer>
+</div>

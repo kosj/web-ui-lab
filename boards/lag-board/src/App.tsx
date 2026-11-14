@@ -27,6 +27,7 @@ import { ChatStream } from './components/ChatStream';
 import type { BlindSpot, SignalScope } from './analytics/signals';
 import { applyViewAttr, useViewRoute, type Handoff, type ViewId } from './lib/route';
 import { CommandCenter } from './command/CommandCenter';
+import { Broadcast } from './broadcast/Broadcast';
 
 type Scope = 'ALL' | RegionId;
 
@@ -42,8 +43,8 @@ export function App() {
   const { style, setStyle } = useStylePref();
   const { view, setView } = useViewRoute();
   const [handoff, setHandoff] = useState<Handoff | null>(null);
-  // 커맨드 센터는 다크 전용 (관제실 벽 화면 · 발광 표현)
-  const theme = view === 'command' ? 'dark' : effectiveTheme(style, mode);
+  // 커맨드 센터·라이브 중계는 다크 전용 (관제실 벽 화면 · 중계 그래픽)
+  const theme = view === 'analysis' ? effectiveTheme(style, mode) : 'dark';
   // 자식 차트가 토큰을 읽기 전에 <html> 속성이 맞아 있어야 한다 (멱등)
   applyRootAttrs(style, theme);
   applyViewAttr(view);
@@ -54,12 +55,14 @@ export function App() {
   return (
     <MotionContext.Provider value={motion.mode}>
       {view === 'command' ? (
-        <CommandCenter m={model} motion={motion.mode} onMotion={motion.toggle} onAnalysis={(h) => go('analysis', h)} />
+        <CommandCenter m={model} motion={motion.mode} onMotion={motion.toggle} onView={go} />
+      ) : view === 'broadcast' ? (
+        <Broadcast m={model} motion={motion.mode} onMotion={motion.toggle} onView={go} />
       ) : (
         <Board
           m={model} theme={theme} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle}
           style={style} onStyle={setStyle} themeLocked={STYLE_BY_ID[style].themes.length === 1}
-          onCommand={() => go('command')} handoff={handoff}
+          onView={go} handoff={handoff}
         />
       )}
     </MotionContext.Provider>
@@ -79,10 +82,10 @@ function worstServer(m: BoardModel, t: number) {
   return m.ds.servers.map((s) => ({ id: s.id, el: m.an[s.id].el[t] })).sort((a, b) => b.el - a.el)[0].id;
 }
 
-function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocked, onCommand, handoff }: {
+function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocked, onView, handoff }: {
   m: BoardModel; theme: 'dark' | 'light'; onTheme: () => void; motion: 'full' | 'reduced'; onMotion: () => void;
   style: StyleId; onStyle: (s: StyleId) => void; themeLocked: boolean;
-  onCommand: () => void; handoff: Handoff | null;
+  onView: (v: ViewId) => void; handoff: Handoff | null;
 }) {
   const tokens = useTokens(`${theme}|${style}`);
   const [range, setRange] = useState<RangeKey>('24h');
@@ -209,7 +212,7 @@ function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocke
         theme={theme} onTheme={onTheme} serverCount={m.ds.servers.length}
         motion={motion} onMotion={onMotion}
         style={style} onStyle={(s) => withViewTransition(() => onStyle(s), motion === 'full')} themeLocked={themeLocked}
-        onCommand={onCommand}
+        onView={onView}
         replay={{
           ...replay,
           progress: replay.win && replay.pos !== null ? (replay.pos - replay.win.from) / Math.max(1, replay.win.to - replay.win.from) : 0,

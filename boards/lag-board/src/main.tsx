@@ -11,6 +11,11 @@ import '@fontsource-variable/jetbrains-mono/wght.css';
 import '@fontsource/chakra-petch/latin-500.css';
 import '@fontsource/chakra-petch/latin-600.css';
 import '@fontsource/chakra-petch/latin-700.css';
+// 라이브 중계 — 중계 그래픽의 좁은 고딕(라틴·숫자)
+import '@fontsource/barlow-condensed/latin-500.css';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/barlow-condensed/latin-800.css';
 import '@ds/base.css';
 import './app.css';
 import './style-flair.css';

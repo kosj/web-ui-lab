@@ -1,4 +1,4 @@
-import { BarChart3, History, Play, Radar, Radio, Sparkles } from 'lucide-react';
+import { BarChart3, History, Play, Radar, Radio, Sparkles, Tv } from 'lucide-react';
 import { dateLabel, hhmm, mdhm } from '../lib/format';
 
 /** 상단 HUD — 브랜드 · 화면 전환 · 수집 상태 · 시계(LIVE/재생/과거) · 모션 토글 */
@@ -8,9 +8,9 @@ function when(ts: number, nowTs: number) {
   return day(ts) === day(nowTs) ? hhmm(ts) : mdhm(ts);
 }
 
-export function Hud({ ts, nowTs, live, replaying, serverCount, motion, onMotion, onAnalysis, onLive }: {
+export function Hud({ ts, nowTs, live, replaying, serverCount, motion, onMotion, onAnalysis, onBroadcast, onLive }: {
   ts: number; nowTs: number; live: boolean; replaying: boolean; serverCount: number;
-  motion: 'full' | 'reduced'; onMotion: () => void; onAnalysis: () => void; onLive: () => void;
+  motion: 'full' | 'reduced'; onMotion: () => void; onAnalysis: () => void; onBroadcast: () => void; onLive: () => void;
 }) {
   return (
     <header className="cc-hud">
@@ -31,6 +31,7 @@ export function Hud({ ts, nowTs, live, replaying, serverCount, motion, onMotion,
 
       <nav className="cc-viewswitch" aria-label="화면 전환">
         <button type="button" aria-current="page"><Radar size={14} aria-hidden />커맨드 센터</button>
+        <button type="button" onClick={onBroadcast}><Tv size={14} aria-hidden />라이브 중계</button>
         <button type="button" onClick={onAnalysis}><BarChart3 size={14} aria-hidden />분석 보드</button>
       </nav>
 

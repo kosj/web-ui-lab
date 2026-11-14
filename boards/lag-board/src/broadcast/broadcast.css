@@ -1,0 +1,1238 @@
+/*
+ * 라이브 중계 — 레이스·e스포츠 중계 그래픽 문법 (다크 전용). 근거·규칙: knowledge/broadcast.md
+ *
+ * - 크롬은 무채색(검정·흰색·회색). 흰 바탕 검정 글자의 기울인 탭이 중계 그래픽의 시그니처다.
+ * - 색은 상태(노랑·주황·빨강 = 주의·경고·심각)와 원인 4색에만. 정상은 회색 — "색이 보이면 일이 났다".
+ * - 숫자는 좁은 고딕(Barlow Condensed): 좁은 칸에 큰 숫자를 넣고 멀리서 읽히게 (중계 타워의 관례).
+ * 색 원본은 palette.ts — 여기서는 .bc 루트에 주입된 --bc-* 변수만 읽는다.
+ */
+
+:root[data-view='broadcast'][data-style][data-theme] {
+  color-scheme: dark;
+  --bg: #09090c;
+  --page-bg: #09090c;
+  --ink-1: #f6f6f8;
+  --ink-2: #a9a9b4;
+  --ink-3: #6f6f7b;
+  --focus: #ffffff;
+  --select: #ffffff;
+  --font-num: 'Barlow Condensed', var(--font-sans);
+  --font-display: var(--font-sans);
+}
+:root[data-view='broadcast'] body {
+  background: #09090c;
+}
+
+.bc {
+  --bc-num: 'Barlow Condensed', 'Pretendard Variable', Pretendard, sans-serif;
+  --bc-skew: 12px;
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  color: var(--bc-ink-1);
+  font-family: var(--font-sans);
+}
+/* 배경: 정지된 사선 결 + 위쪽 빛 — 중계 화면의 "속도감"을 질감으로만 (움직이지 않는다) */
+.bc::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 420px at 50% -120px, rgba(255, 255, 255, 0.07), transparent 70%),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 14px),
+    #09090c;
+}
+:where(.bc) button {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.bc :focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+.bc .num {
+  font-family: var(--bc-num);
+  font-variant-numeric: tabular-nums;
+}
+.bc-muted {
+  color: var(--bc-ink-3);
+}
+
+/* 등급·원인 색 변수 */
+.bc .bc-t-smooth { --t: var(--bc-smooth); --ti: var(--bc-smooth-ink); }
+.bc .bc-t-good { --t: var(--bc-good); --ti: var(--bc-good-ink); }
+.bc .bc-t-notice { --t: var(--bc-notice); --ti: var(--bc-notice-ink); }
+.bc .bc-t-warning { --t: var(--bc-warning); --ti: var(--bc-warning-ink); }
+.bc .bc-t-critical { --t: var(--bc-critical); --ti: var(--bc-critical-ink); }
+.bc .bc-c-infra { --c: var(--bc-infra); }
+.bc .bc-c-network { --c: var(--bc-network); }
+.bc .bc-c-server { --c: var(--bc-server); }
+.bc .bc-c-client { --c: var(--bc-client); }
+.bc .bc-c-base { --c: #3a3a44; }
+
+/* ───────── 상단 ───────── */
+.bc-top {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 2px solid #ffffff;
+}
+.bc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bc-logo {
+  display: inline-flex;
+  transform: skewX(-12deg);
+}
+.bc-logo b,
+.bc-logo i {
+  display: block;
+  padding: 3px 9px;
+  font: italic 800 17px/1 var(--bc-num);
+  letter-spacing: 0.04em;
+}
+.bc-logo b {
+  background: #ffffff;
+  color: #000000;
+}
+.bc-logo i {
+  background: #2a2a33;
+  color: #ffffff;
+}
+.bc-brand h1 {
+  font: 800 18px/1.2 var(--font-sans);
+  letter-spacing: -0.02em;
+}
+.bc-views {
+  display: inline-flex;
+  gap: 4px;
+}
+.bc-views button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  font: 700 12.5px/1 var(--font-sans);
+  color: var(--bc-ink-2);
+  background: #17171d;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.bc-views button:hover {
+  color: #ffffff;
+  background: #24242c;
+}
+.bc-views button[aria-current='page'] {
+  color: #000000;
+  background: #ffffff;
+  cursor: default;
+}
+.bc-top-right {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.bc-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  background: #17171d;
+  font: 700 15px/1 var(--bc-num);
+  letter-spacing: 0.02em;
+}
+.bc-clock b {
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.bc-clock.is-live b {
+  color: #ffffff;
+}
+.bc-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+  animation: bc-live 1.8s ease-out infinite;
+}
+.bc-clock.is-replay {
+  background: #ffffff;
+  color: #000000;
+}
+.bc-clock.is-past {
+  padding-right: 4px;
+  color: var(--bc-ink-2);
+}
+
+/* 버튼 */
+.bc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  font: 700 12px/1 var(--font-sans);
+  white-space: nowrap;
+  color: #ffffff;
+  background: #23232b;
+  transition: background-color var(--dur-fast-02) var(--ease-productive);
+}
+.bc-btn:hover {
+  background: #33333d;
+}
+.bc-btn.primary {
+  color: #000000;
+  background: #ffffff;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  padding: 0 16px;
+}
+.bc-btn.primary:hover {
+  background: #dcdce2;
+}
+.bc-btn.ghost {
+  background: transparent;
+  color: var(--bc-ink-2);
+}
+.bc-btn.ghost:hover {
+  color: #ffffff;
+  background: #23232b;
+}
+.bc-btn.icon {
+  width: 30px;
+  padding: 0;
+}
+.bc-btn.is-on,
+.bc-btn.is-auto {
+  color: #000000;
+  background: #ffffff;
+}
+.bc-btn .bc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #000000;
+  animation: bc-blink 1.6s steps(2, start) infinite;
+}
+.bc-seg {
+  display: inline-flex;
+  gap: 2px;
+}
+.bc-seg button {
+  height: 24px;
+  padding: 0 8px;
+  font: 700 12px/1 var(--bc-num);
+  color: var(--bc-ink-3);
+  background: #17171d;
+}
+.bc-seg button[aria-pressed='true'] {
+  color: #000000;
+  background: #ffffff;
+}
+
+/* ───────── 배치 ───────── */
+.bc-main {
+  display: grid;
+  gap: 12px;
+  max-width: 1880px;
+  margin: 0 auto;
+  padding: 14px 20px 26px;
+}
+.bc-grid {
+  display: grid;
+  grid-template-columns: 384px minmax(0, 1fr) 330px;
+  gap: 12px;
+  align-items: stretch;
+}
+.bc-panel {
+  position: relative;
+  background: var(--bc-panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 2px solid #ffffff;
+  padding: 0 0 10px;
+  min-width: 0;
+}
+.bc-tab {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+.bc-tab h2 {
+  padding: 5px 22px 5px 12px;
+  font: 800 13px/1.2 var(--font-sans);
+  letter-spacing: -0.005em;
+  color: #000000;
+  background: #ffffff;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--bc-skew)) 100%, 0 100%);
+}
+.bc-tab > span {
+  font-size: 11px;
+  color: var(--bc-ink-3);
+}
+.bc-foot {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bc-ink-3);
+}
+
+/* ───────── 스코어 버그 ───────── */
+.bc-bug {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.bc-cell {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: baseline;
+  gap: 0 8px;
+  padding: 8px 12px 10px;
+  background: #000000;
+  border-bottom: 4px solid var(--t);
+  transition: background-color var(--dur-fast-02) var(--ease-productive);
+}
+.bc-cell:hover {
+  background: #121217;
+}
+.bc-cell.is-selected {
+  background: #ffffff;
+  color: #000000;
+}
+.bc-cell-code {
+  grid-row: 1;
+  font: italic 800 20px/1 var(--bc-num);
+  letter-spacing: 0.02em;
+}
+.bc-cell-name {
+  grid-row: 2;
+  grid-column: 1 / 3;
+  font-size: 11px;
+  color: var(--bc-ink-3);
+}
+.bc-cell.is-selected .bc-cell-name {
+  color: #55555f;
+}
+.bc-cell-val {
+  grid-row: 1 / 3;
+  grid-column: 3;
+  align-self: center;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ti);
+}
+.bc-cell.is-selected .bc-cell-val {
+  color: #000000;
+}
+.bc-cell-d {
+  grid-row: 1;
+  grid-column: 2;
+  justify-self: end;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bc-ink-3);
+}
+.bc-cell-d.up {
+  color: var(--bc-notice-ink);
+}
+.bc-cell.is-selected .bc-cell-d.up {
+  color: #8a6d00;
+}
+.bc-cell-alert {
+  position: absolute;
+  top: -5px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #000000;
+  background: var(--bc-warning);
+  border: 2px solid #09090c;
+}
+
+/* ───────── 타이밍 타워 ───────── */
+.bc-tower {
+  display: flex;
+  flex-direction: column;
+}
+.bc-tower-cols,
+.bc-row button {
+  display: grid;
+  grid-template-columns: 30px 28px 4px minmax(0, 1fr) 24px 50px 52px;
+  align-items: center;
+  gap: 0 6px;
+  padding: 0 10px 0 8px;
+}
+.bc-tower-cols {
+  padding-bottom: 4px;
+  font-size: 10px;
+  color: var(--bc-ink-3);
+}
+.bc-tower-cols span:nth-child(1) { grid-column: 1 / 3; }
+.bc-tower-cols span:nth-child(2) { grid-column: 3 / 5; }
+.bc-tower-cols span:nth-child(3) { grid-column: 5; text-align: center; }
+.bc-tower-cols span:nth-child(4) { grid-column: 6; text-align: right; }
+.bc-tower-cols span:nth-child(5) { grid-column: 7; text-align: right; }
+.bc-tower-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bc-row {
+  position: relative;
+}
+.bc-row button {
+  width: 100%;
+  height: 31px;
+  background: #15151a;
+}
+.bc-row:nth-child(even) button {
+  background: #19191f;
+}
+.bc-row button:hover {
+  background: #26262e;
+}
+.bc-pos {
+  display: grid;
+  place-items: center;
+  height: 23px;
+  font-size: 17px;
+  font-weight: 800;
+  font-style: italic;
+}
+.bc-row.is-top .bc-pos {
+  background: #ffffff;
+  color: #000000;
+  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+}
+.bc-chg span {
+  display: inline-flex;
+  align-items: center;
+  font: 700 12px/1 var(--bc-num);
+}
+.bc-chg .up {
+  color: var(--bc-notice-ink);
+}
+.bc-chg .down {
+  color: var(--bc-ink-3);
+}
+.bc-strip {
+  align-self: stretch;
+  margin: 4px 0;
+  background: var(--t);
+}
+.bc-name {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.bc-name b {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.bc-name small {
+  font-size: 11.5px;
+  color: var(--bc-ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bc-tyre i {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  border: 2.5px solid var(--c);
+  font: normal 800 10px/1 var(--font-sans);
+  color: #ffffff;
+}
+.bc-tyre i.none {
+  border-color: transparent;
+  color: var(--bc-ink-3);
+}
+.bc-val {
+  text-align: right;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ti);
+}
+.bc-gap {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bc-ink-2);
+}
+/* ON AIR 줄은 흰 바탕 반전 — 중계에서 화면에 나온 선수를 타워에서 표시하는 관례 */
+.bc-row.is-onair button,
+.bc-row.is-onair:nth-child(even) button {
+  background: #ffffff;
+  color: #000000;
+}
+.bc-row.is-onair .bc-name small,
+.bc-row.is-onair .bc-gap {
+  color: #3c3c46;
+}
+.bc-row.is-onair .bc-val {
+  color: #000000;
+}
+.bc-row.is-onair .bc-tyre i {
+  color: #000000;
+}
+.bc-row.is-onair .bc-chg .up {
+  color: #8a6d00;
+}
+.bc-row.is-onair.is-top .bc-pos {
+  background: #000000;
+  color: #ffffff;
+}
+.bc-tower-foot {
+  margin: auto 0 0;
+  padding: 8px 10px 0;
+  font-size: 10.5px;
+  color: var(--bc-ink-3);
+}
+
+/* ───────── ON AIR 스테이지 ───────── */
+.bc-onair {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 14px;
+  overflow: hidden;
+}
+.bc-onair-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0 -16px;
+  padding: 0 16px 0 0;
+}
+.bc-onair-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 22px 6px 14px;
+  font: italic 800 15px/1 var(--bc-num);
+  letter-spacing: 0.08em;
+  color: #000000;
+  background: #ffffff;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--bc-skew)) 100%, 0 100%);
+}
+.bc-onair-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font: 800 22px/1.2 var(--font-sans);
+  animation: bc-slide 420ms var(--ease-expressive-enter) both;
+}
+.bc-onair-name b {
+  font-size: 32px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+.bc-onair-meta {
+  font-size: 12px;
+  color: var(--bc-ink-3);
+}
+.bc-onair-head .bc-btn {
+  margin-left: auto;
+}
+.bc-onair-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 24px;
+}
+.bc-big {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+.bc-big-num {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 104px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+.bc-big-num small {
+  margin-left: 4px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--bc-ink-3);
+}
+.bc-tier-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 6px 18px 6px 12px;
+  font: 800 15px/1 var(--font-sans);
+  color: #000000;
+  background: var(--t);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.bc-tier-flag.bc-t-smooth,
+.bc-tier-flag.bc-t-good {
+  color: #ffffff;
+}
+.bc-deltas {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 4px 22px;
+  margin: 0 0 6px;
+}
+.bc-deltas dt {
+  font-size: 11px;
+  color: var(--bc-ink-3);
+}
+.bc-deltas dd {
+  margin: 2px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.bc-cause {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 8px;
+  font: 800 13px/1.2 var(--font-sans);
+  color: #000000;
+  background: var(--c);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.bc-cause.mini {
+  padding: 2px 9px 2px 6px;
+  font-size: 11px;
+}
+
+.bc-tele {
+  position: relative;
+  min-width: 0;
+}
+.bc-tele svg {
+  display: block;
+  overflow: visible;
+}
+.bc-tele-title {
+  position: absolute;
+  top: -2px;
+  left: 34px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bc-ink-2);
+  pointer-events: none;
+}
+.bc-tele-title em {
+  margin-left: 8px;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--bc-ink-3);
+}
+.bc-th line {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-dasharray: 3 4;
+}
+.bc-th-150 line { stroke: color-mix(in srgb, var(--bc-notice) 55%, transparent); }
+.bc-th-250 line { stroke: color-mix(in srgb, var(--bc-warning) 55%, transparent); }
+.bc-th-500 line { stroke: color-mix(in srgb, var(--bc-critical) 55%, transparent); }
+.bc-th text,
+.bc-tele-x {
+  font: 600 11px var(--bc-num);
+  fill: var(--bc-ink-3);
+}
+.bc-layer {
+  fill: var(--c);
+  opacity: 0.8;
+}
+.bc-layer.bc-c-base {
+  fill: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+.bc-tele-line {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  /* pathLength 정규화는 브라우저마다 대시 적용이 달라(점선이 됨) 충분히 긴 고정 길이로 그린다 */
+  stroke-dasharray: 4000;
+  stroke-dashoffset: 0;
+  animation: bc-draw 1100ms var(--ease-expressive) both;
+}
+.bc-tele-head {
+  fill: #ffffff;
+  stroke: #09090c;
+  stroke-width: 2;
+}
+.bc-sectors {
+  display: flex;
+  gap: 2px;
+  height: 30px;
+}
+.bc-sector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 2px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #000000;
+  background: var(--c);
+  transition: flex-grow var(--dur-slow-01) var(--ease-productive);
+}
+:root[data-replay='on'] .bc-sector {
+  transition-duration: var(--dur-stream);
+}
+.bc-sector.bc-c-base {
+  color: #ffffff;
+}
+.bc-sector b {
+  font-size: 17px;
+  font-weight: 700;
+}
+.bc-sector em {
+  font: normal 700 11px var(--font-sans);
+}
+.bc-readouts {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.bc-readout {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px 8px;
+  background: #0c0c10;
+}
+.bc-readout-k {
+  font-size: 10.5px;
+  color: var(--bc-ink-3);
+  white-space: nowrap;
+}
+.bc-readout-v {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.bc-readout-v small {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-ink-3);
+}
+.bc-readout-bar {
+  position: relative;
+  height: 3px;
+  margin-top: 3px;
+  background: #26262e;
+}
+.bc-readout-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #ffffff;
+  transition: width var(--dur-moderate-02) var(--ease-productive);
+}
+:root[data-replay='on'] .bc-readout-bar i {
+  transition-duration: var(--dur-stream);
+}
+.bc-readout-bar em {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 7px;
+  background: var(--bc-ink-2);
+}
+.bc-readout.is-over .bc-readout-v {
+  color: var(--bc-notice-ink);
+}
+.bc-readout.is-over .bc-readout-bar i {
+  background: var(--bc-notice);
+}
+
+/* 로워서드 */
+.bc-l3 {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  z-index: 3;
+  display: grid;
+  max-width: 760px;
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.8);
+  animation: bc-wipe 480ms var(--ease-expressive-enter) both;
+}
+.bc-l3.is-leaving {
+  animation: bc-out 320ms var(--ease-productive-exit) both;
+}
+.bc-l3-top {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+}
+.bc-l3-top > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font: 800 12px/1.2 var(--font-sans);
+}
+.bc-l3-kind {
+  color: #ffffff;
+  background: #000000;
+}
+.bc-l3-cause {
+  color: #000000;
+  background: var(--c);
+}
+.bc-l3-time {
+  font-family: var(--bc-num) !important;
+  font-size: 14px !important;
+  color: #ffffff;
+  background: #2a2a33;
+}
+.bc-l3-tier {
+  color: #000000;
+  background: var(--lv, #ffffff);
+}
+.bc-l3.bc-l-notice { --lv: var(--bc-notice); }
+.bc-l3.bc-l-warning { --lv: var(--bc-warning); }
+.bc-l3.bc-l-critical { --lv: var(--bc-critical); }
+.bc-l3-main {
+  display: grid;
+  gap: 3px;
+  padding: 11px 16px 12px;
+  color: #000000;
+  background: #ffffff;
+  border-left: 8px solid var(--lv, #000000);
+}
+.bc-l3-main b {
+  font: 800 20px/1.25 var(--font-sans);
+  letter-spacing: -0.015em;
+}
+.bc-l3-main span {
+  font-size: 12.5px;
+  color: #3c3c46;
+}
+
+/* ───────── 관제 메시지 ───────── */
+.bc-rc {
+  display: flex;
+  flex-direction: column;
+  /* 높이는 가운데 스테이지가 정한다 — 메시지가 많으면 안에서 스크롤 */
+  height: 0;
+  min-height: 100%;
+}
+.bc-rc-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 6px 0 10px;
+  list-style: none;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a44 transparent;
+}
+.bc-msg {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  animation: bc-msg-in 380ms var(--ease-expressive-enter) both;
+}
+.bc-msg button {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 3px 8px;
+  width: 100%;
+  padding: 8px 2px;
+}
+.bc-msg button:disabled {
+  cursor: default;
+}
+.bc-msg button:not(:disabled):hover .bc-msg-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bc-msg-time {
+  grid-row: 1 / 4;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bc-ink-2);
+}
+.bc-msg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
+  padding: 2px 10px 2px 6px;
+  font: 800 11px/1.3 var(--font-sans);
+  color: #000000;
+  background: var(--lv, #ffffff);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+}
+.bc-msg .bc-cause {
+  grid-column: 2;
+  justify-self: start;
+  display: none;
+}
+.bc-msg.bc-l-notice { --lv: var(--bc-notice); }
+.bc-msg.bc-l-warning { --lv: var(--bc-warning); }
+.bc-msg.bc-l-critical { --lv: var(--bc-critical); }
+.bc-msg.bc-l-info .bc-msg-tag {
+  color: #ffffff;
+  background: #3a3a44;
+}
+.bc-msg.bc-l-resolved .bc-msg-tag {
+  color: #ffffff;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px #ffffff;
+  clip-path: none;
+}
+.bc-msg-title {
+  grid-column: 2;
+  font: 700 13px/1.35 var(--font-sans);
+}
+.bc-msg-detail {
+  grid-column: 2;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--bc-ink-3);
+}
+.bc-msg.kind-resolve .bc-msg-title,
+.bc-msg.kind-deploy .bc-msg-title {
+  color: var(--bc-ink-2);
+}
+
+/* ───────── 세션 · 하이라이트 ───────── */
+.bc-session {
+  padding: 0 14px 12px;
+}
+.bc-session-head {
+  margin: 0 -14px 10px;
+}
+.bc-ctrl {
+  margin-left: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.bc-track {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bc-track svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.bc-track-hour line {
+  stroke: rgba(255, 255, 255, 0.07);
+}
+.bc-track-hour text {
+  font: 600 11px var(--bc-num);
+  fill: var(--bc-ink-3);
+}
+.bc-track rect.is-playing {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+.bc-track-hit {
+  position: absolute;
+  inset: 0 0 14px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.bc-track-future {
+  position: absolute;
+  top: 0;
+  bottom: 14px;
+  background: rgba(9, 9, 12, 0.7);
+  pointer-events: none;
+}
+.bc-track-cursor,
+.bc-track-ghost {
+  position: absolute;
+  top: 0;
+  bottom: 14px;
+  left: 0;
+  width: 2px;
+  margin-left: -1px;
+  pointer-events: none;
+}
+.bc-track-cursor {
+  background: #ffffff;
+  transition: transform var(--dur-moderate-02) var(--ease-productive);
+}
+:root[data-replay='on'] .bc-track-cursor {
+  transition-duration: var(--dur-stream);
+  transition-timing-function: linear;
+}
+.bc-track-ghost {
+  width: 1px;
+  margin-left: 0;
+  background: rgba(255, 255, 255, 0.35);
+}
+.bc-track-cursor em,
+.bc-track-ghost em {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  font: normal 700 12px/1.3 var(--bc-num);
+  white-space: nowrap;
+}
+.bc-track-cursor em {
+  color: #000000;
+  background: #ffffff;
+}
+.bc-track-cursor.is-live em {
+  transform: translateX(-100%);
+}
+.bc-track-ghost em {
+  color: #ffffff;
+  background: #2a2a33;
+}
+.bc-reel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 1fr);
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a44 transparent;
+}
+.bc-hl {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 10px 12px 10px;
+  background: #0c0c10;
+  border-top: 3px solid var(--c);
+  transition: box-shadow var(--dur-moderate-02) var(--ease-productive), background-color var(--dur-moderate-02);
+}
+.bc-hl.is-playing {
+  background: #1d1d24;
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+.bc-hl-no {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 26px;
+  font-weight: 800;
+  font-style: italic;
+  color: #2c2c35;
+}
+.bc-hl.is-playing .bc-hl-no {
+  color: #ffffff;
+}
+.bc-hl-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bc-hl-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bc-ink-2);
+}
+.bc-hl-title {
+  font: 700 13px/1.35 var(--font-sans);
+  padding-right: 34px;
+}
+.bc-hl-meta {
+  font-size: 11.5px;
+  color: var(--bc-ink-3);
+}
+.bc-hl-meta b {
+  font-size: 14px;
+  color: var(--bc-ink-1);
+}
+.bc-hl-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* ───────── 등장 (처음 한 번: 왼쪽에서 닦아 내며) ───────── */
+.bc.is-booting .bc-bug,
+.bc.is-booting .bc-panel {
+  animation: bc-wipe 640ms var(--ease-expressive-enter) both;
+}
+.bc.is-booting .bc-tower { animation-delay: 80ms; }
+.bc.is-booting .bc-onair { animation-delay: 160ms; }
+.bc.is-booting .bc-rc { animation-delay: 240ms; }
+.bc.is-booting .bc-session { animation-delay: 320ms; }
+
+@keyframes bc-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes bc-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes bc-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+@keyframes bc-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes bc-draw {
+  from {
+    stroke-dashoffset: 4000;
+  }
+}
+@keyframes bc-live {
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+@keyframes bc-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* ───────── 반응형 ───────── */
+@media (max-width: 1360px) {
+  .bc-grid {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+  .bc-rc {
+    grid-column: 1 / -1;
+    height: auto;
+    min-height: 0;
+    max-height: 340px;
+  }
+  .bc-readouts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .bc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bc-bug {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .bc-big-num {
+    font-size: 84px;
+  }
+}
+@media (max-width: 560px) {
+  .bc-top {
+    padding: 8px 12px;
+  }
+  .bc-brand h1,
+  .bc-clock-date {
+    display: none;
+  }
+  .bc-views button {
+    padding: 0 10px;
+  }
+  .bc-main {
+    padding: 10px 10px 22px;
+  }
+  /* 점수판: 좁은 칸에서는 코드 위 · 값 아래 두 줄, 증감·이름은 생략 (값과 등급 띠가 우선) */
+  .bc-cell {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 6px 8px 7px;
+  }
+  .bc-cell-code {
+    grid-column: 1;
+    font-size: 15px;
+  }
+  .bc-cell-val {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+    font-size: 24px;
+  }
+  .bc-cell-name,
+  .bc-cell-d {
+    display: none;
+  }
+  .bc-big-num {
+    font-size: 72px;
+  }
+  .bc-deltas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px 12px;
+  }
+  .bc-deltas dd {
+    font-size: 19px;
+  }
+  .bc-readouts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bc-onair-meta {
+    width: 100%;
+  }
+  .bc-l3-main b {
+    font-size: 16px;
+  }
+}

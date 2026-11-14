@@ -6,7 +6,7 @@ import type { BlindSpot } from '../analytics/signals';
 import { CAUSE_LABEL, REGIONS, TIERS, type RegionId } from '../data/config';
 import { CAUSE_ICON } from '../components/Badges';
 import { useReplay } from '../lib/useReplay';
-import type { Handoff } from '../lib/route';
+import type { Handoff, ViewId } from '../lib/route';
 import { Hud } from './Hud';
 import { LagGauge } from './LagGauge';
 import { RailStats } from './RailStats';
@@ -30,9 +30,10 @@ const REGION_NAME = Object.fromEntries(REGIONS.map((r) => [r.id, r.name])) as Re
  *  - 권역을 고르면(지도 노드·포드) 게이지·이퀄라이저·피드·리본이 모두 그 권역으로 좁혀진다.
  *  - 모든 움직임은 데이터가 만든다. 모션을 끄면 같은 인코딩의 정지 화면.
  */
-export function CommandCenter({ m, motion, onMotion, onAnalysis }: {
-  m: BoardModel; motion: 'full' | 'reduced'; onMotion: () => void; onAnalysis: (h: Handoff | null) => void;
+export function CommandCenter({ m, motion, onMotion, onView }: {
+  m: BoardModel; motion: 'full' | 'reduced'; onMotion: () => void; onView: (v: ViewId, h?: Handoff | null) => void;
 }) {
+  const onAnalysis = (h: Handoff | null) => onView('analysis', h);
   const [cursor, setCursor] = useState<number | null>(null);
   const [scope, setScope] = useState<Scope>('ALL');
   const [selected, setSelected] = useState<string | null>(null);
@@ -96,7 +97,7 @@ export function CommandCenter({ m, motion, onMotion, onAnalysis }: {
     <div className={`cc ${booting ? 'is-booting' : ''} ${replay.active ? 'is-replaying' : ''}`} style={CC_VARS}>
       <Hud
         ts={m.ds.times[t]} nowTs={m.ds.times[m.last]} live={live} replaying={replay.active} serverCount={m.ds.servers.length}
-        motion={motion} onMotion={onMotion} onAnalysis={() => onAnalysis(scope === 'ALL' ? null : { region: scope })}
+        motion={motion} onMotion={onMotion} onAnalysis={() => onAnalysis(scope === 'ALL' ? null : { region: scope })} onBroadcast={() => onView('broadcast')}
         onLive={() => manualCursor(null)}
       />
       <main className="cc-main">

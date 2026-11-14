@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import type { RegionId } from '../data/config';
 
 /**
- * 화면 전환 — 커맨드 센터(기본) / 분석 보드.
- * 주소: #command · #analysis · #style-<id>(분석 보드 + 스타일). 아티팩트는 단순 #이름만 전달한다.
+ * 화면 전환 — 커맨드 센터(기본) / 라이브 중계 / 분석 보드. 같은 모델을 다른 문법으로 보여 주는 UI 후보들이다.
+ * 주소: #command · #broadcast · #analysis · #style-<id>(분석 보드 + 스타일). 아티팩트는 단순 #이름만 전달한다.
  */
-export type ViewId = 'command' | 'analysis';
+export type ViewId = 'command' | 'broadcast' | 'analysis';
+export const VIEW_HASH: Record<ViewId, string> = { command: '#command', broadcast: '#broadcast', analysis: '#analysis' };
 
-/** 커맨드 센터 → 분석 보드로 넘길 초점 (장애·권역) */
+/** 다른 화면 → 분석 보드로 넘길 초점 (장애·권역) */
 export interface Handoff {
   incidentId?: string;
   region?: RegionId;
@@ -16,6 +17,7 @@ export interface Handoff {
 function readView(): ViewId {
   const h = location.hash;
   if (h === '#analysis' || h.startsWith('#style-')) return 'analysis';
+  if (h === '#broadcast') return 'broadcast';
   return 'command';
 }
 
@@ -29,7 +31,7 @@ export function useViewRoute() {
   const setView = useCallback((v: ViewId) => {
     setViewState(v);
     try {
-      history.replaceState(null, '', v === 'command' ? '#command' : '#analysis');
+      history.replaceState(null, '', VIEW_HASH[v]);
     } catch {
       /* 주소를 못 바꾸는 환경에서도 화면은 바뀐다 */
     }
