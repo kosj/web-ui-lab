@@ -1,0 +1,10 @@
+{
+  "name": "web-ui-lab",
+  "private": true,
+  "workspaces": ["boards/*"],
+  "scripts": {
+    "dev:lag": "npm run dev -w boards/lag-board",
+    "build:lag": "npm run build -w boards/lag-board",
+    "test": "npm test -w boards/lag-board"
+  }
+}

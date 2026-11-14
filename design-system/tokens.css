@@ -1,0 +1,142 @@
+/*
+ * web-ui-lab 디자인 토큰 v0.1 — 관제(Ops) 대시보드 계열 공용
+ *
+ * 레이아웃 개념: 요약(배너·KPI) → 패턴(히트맵·분해) → 개체(서버 그리드) → 근거(드릴다운) 순으로 내려가는 깔때기.
+ *
+ * 원칙
+ *  - 다크 우선. 중립색은 청색 쪽으로 살짝 기운 슬레이트 — 순수 회색보다 의도된 인상.
+ *  - UI 크롬(버튼·선택·포커스)은 무채색. 색상(hue)은 데이터와 상태에만 쓴다.
+ *  - 원인 4색: dataviz 기준 팔레트(blue·aqua·violet·magenta), 인접쌍 CVD ΔE ≥ 16 검증 완료.
+ *    상태색(주황·노랑·빨강)과 겹치지 않게 골랐다 — "네트워크=주황"이 "경고"로 오독되지 않도록.
+ *  - 상태색(쾌적~심각)은 테마와 무관하게 고정, 항상 아이콘+라벨과 함께.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* 면 */
+  --bg: #0a0d12;
+  --surface-1: #10141b;
+  --surface-2: #161b24;
+  --surface-3: #1d2330;
+  --line: rgba(148, 170, 210, 0.1);
+  --line-strong: rgba(148, 170, 210, 0.2);
+  --scrim: rgba(5, 8, 12, 0.6);
+
+  /* 잉크 */
+  --ink-1: #e8edf5;
+  --ink-2: #a9b3c4;
+  --ink-3: #7a859b;
+  --ink-inverse: #0a0d12;
+
+  /* 상호작용 (무채색) */
+  --select: #e8edf5;
+  --focus: #9ec1ff;
+  --hover: rgba(148, 170, 210, 0.07);
+
+  /* 원인 (categorical, 고정 순서) */
+  --cause-infra: #3987e5;
+  --cause-network: #199e70;
+  --cause-server: #9085e9;
+  --cause-client: #d55181;
+  --cause-base: #2c3443;
+
+  /* 체감 지연 등급 (status, 고정) */
+  --tier-smooth: #1b2230;
+  --tier-good: #2b3547;
+  --tier-notice: #fab219;
+  --tier-warning: #ec835a;
+  --tier-critical: #d03b3b;
+  --tier-good-ink: #0ca30c;
+
+  /* 차트 크롬 */
+  --grid: rgba(148, 170, 210, 0.08);
+  --axis: rgba(148, 170, 210, 0.22);
+
+  /* 타이포 */
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+  --fs-11: 0.6875rem;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-20: 1.25rem;
+  --fs-28: 1.75rem;
+  --fs-36: 2.25rem;
+
+  /* 간격·모서리 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 14px;
+
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line-strong);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #f2f4f7;
+    --surface-1: #ffffff;
+    --surface-2: #f6f7f9;
+    --surface-3: #eceff4;
+    --line: rgba(20, 32, 56, 0.09);
+    --line-strong: rgba(20, 32, 56, 0.18);
+    --scrim: rgba(20, 28, 40, 0.3);
+    --ink-1: #0f1520;
+    --ink-2: #485266;
+    --ink-3: #667085;
+    --ink-inverse: #ffffff;
+    --select: #0f1520;
+    --focus: #2a63d6;
+    --hover: rgba(20, 32, 56, 0.05);
+    --cause-infra: #2a78d6;
+    --cause-network: #1baf7a;
+    --cause-server: #6250d6;
+    --cause-client: #e87ba4;
+    --cause-base: #d5dbe4;
+    --tier-smooth: #e9edf2;
+    --tier-good: #d3dae4;
+    --tier-good-ink: #006300;
+    --grid: rgba(20, 32, 56, 0.07);
+    --axis: rgba(20, 32, 56, 0.25);
+    --shadow-pop: 0 12px 32px rgba(15, 21, 32, 0.14), 0 0 0 1px var(--line-strong);
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f2f4f7;
+  --surface-1: #ffffff;
+  --surface-2: #f6f7f9;
+  --surface-3: #eceff4;
+  --line: rgba(20, 32, 56, 0.09);
+  --line-strong: rgba(20, 32, 56, 0.18);
+  --scrim: rgba(20, 28, 40, 0.3);
+  --ink-1: #0f1520;
+  --ink-2: #485266;
+  --ink-3: #667085;
+  --ink-inverse: #ffffff;
+  --select: #0f1520;
+  --focus: #2a63d6;
+  --hover: rgba(20, 32, 56, 0.05);
+  --cause-infra: #2a78d6;
+  --cause-network: #1baf7a;
+  --cause-server: #6250d6;
+  --cause-client: #e87ba4;
+  --cause-base: #d5dbe4;
+  --tier-smooth: #e9edf2;
+  --tier-good: #d3dae4;
+  --tier-good-ink: #006300;
+  --grid: rgba(20, 32, 56, 0.07);
+  --axis: rgba(20, 32, 56, 0.25);
+  --shadow-pop: 0 12px 32px rgba(15, 21, 32, 0.14), 0 0 0 1px var(--line-strong);
+}
