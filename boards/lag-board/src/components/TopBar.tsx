@@ -1,4 +1,4 @@
-import { History, Moon, Pause, Play, Radio, Sparkles, Square, Sun } from 'lucide-react';
+import { History, Moon, Pause, Play, Radar, Radio, Sparkles, Square, Sun } from 'lucide-react';
 import { dateLabel, hhmm } from '../lib/format';
 import { RANGE_LABEL, type RangeKey } from '../lib/view';
 import type { ThemeMode } from '../lib/theme';
@@ -34,8 +34,10 @@ export function TopBar(props: {
   style: StyleId;
   onStyle: (s: StyleId) => void;
   themeLocked: boolean;
+  /** 커맨드 센터로 전환 */
+  onCommand: () => void;
 }) {
-  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount, motion, onMotion, replay, style, onStyle, themeLocked } = props;
+  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount, motion, onMotion, replay, style, onStyle, themeLocked, onCommand } = props;
   const live = cursorTs === null && !replay.active;
   return (
     <header className={`topbar ${replay.active ? 'is-replaying' : ''}`}>
@@ -55,6 +57,10 @@ export function TopBar(props: {
       </div>
 
       <div className="topbar-tools">
+        <button type="button" className="btn view-switch" onClick={onCommand} title="실시간 관제 화면 — 세계 지도 흐름·게이지·장애 피드">
+          <Radar size={14} aria-hidden />
+          커맨드 센터
+        </button>
         <span className="feed-health" title="수집기 자체 상태 — 대시보드가 '정상'이라도 수집이 멈췄다면 의미가 없다">
           <span className="feed-dot" aria-hidden />
           수집 정상 · {serverCount}/{serverCount} 서버 · 1분 주기

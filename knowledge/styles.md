@@ -3,6 +3,7 @@
 > 2026-11-14. 질문: "더 고급스럽고 시인성 좋은 스타일 없을까? 몇 가지 형태로 만들어 고르고 싶다."
 > 구현: `design-system/styles.css`(토큰), `boards/lag-board/src/style-flair.css`(시그니처), `src/lib/style.ts`, `src/components/StyleMenu.tsx`
 > 비교 갤러리: `docs/style-gallery/index.html` (스크린샷 포함)
+> 스타일 프리셋은 **분석 보드**에 적용된다. 첫 화면인 커맨드 센터는 다크 전용 네온 HUD 한 가지로, `knowledge/command-center.md`에 따로 정리했다.
 
 ## 1. 다섯 가지 시안
 

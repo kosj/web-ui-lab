@@ -25,6 +25,8 @@ import { IncidentMap } from './components/IncidentMap';
 import { DoseResponse } from './components/DoseResponse';
 import { ChatStream } from './components/ChatStream';
 import type { BlindSpot, SignalScope } from './analytics/signals';
+import { applyViewAttr, useViewRoute, type Handoff, type ViewId } from './lib/route';
+import { CommandCenter } from './command/CommandCenter';
 
 type Scope = 'ALL' | RegionId;
 
@@ -38,16 +40,28 @@ export function App() {
   const { mode, toggle } = useTheme();
   const motion = useMotionPref();
   const { style, setStyle } = useStylePref();
-  const theme = effectiveTheme(style, mode);
+  const { view, setView } = useViewRoute();
+  const [handoff, setHandoff] = useState<Handoff | null>(null);
+  // 커맨드 센터는 다크 전용 (관제실 벽 화면 · 발광 표현)
+  const theme = view === 'command' ? 'dark' : effectiveTheme(style, mode);
   // 자식 차트가 토큰을 읽기 전에 <html> 속성이 맞아 있어야 한다 (멱등)
   applyRootAttrs(style, theme);
+  applyViewAttr(view);
+  const go = useCallback((v: ViewId, h: Handoff | null = null) => {
+    withViewTransition(() => { setHandoff(h); setView(v); }, motion.mode === 'full');
+  }, [motion.mode, setView]);
   if (!model) return <Loading />;
   return (
     <MotionContext.Provider value={motion.mode}>
-      <Board
-        m={model} theme={theme} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle}
-        style={style} onStyle={setStyle} themeLocked={STYLE_BY_ID[style].themes.length === 1}
-      />
+      {view === 'command' ? (
+        <CommandCenter m={model} motion={motion.mode} onMotion={motion.toggle} onAnalysis={(h) => go('analysis', h)} />
+      ) : (
+        <Board
+          m={model} theme={theme} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle}
+          style={style} onStyle={setStyle} themeLocked={STYLE_BY_ID[style].themes.length === 1}
+          onCommand={() => go('command')} handoff={handoff}
+        />
+      )}
     </MotionContext.Provider>
   );
 }
@@ -65,9 +79,10 @@ function worstServer(m: BoardModel, t: number) {
   return m.ds.servers.map((s) => ({ id: s.id, el: m.an[s.id].el[t] })).sort((a, b) => b.el - a.el)[0].id;
 }
 
-function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocked }: {
+function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocked, onCommand, handoff }: {
   m: BoardModel; theme: 'dark' | 'light'; onTheme: () => void; motion: 'full' | 'reduced'; onMotion: () => void;
   style: StyleId; onStyle: (s: StyleId) => void; themeLocked: boolean;
+  onCommand: () => void; handoff: Handoff | null;
 }) {
   const tokens = useTokens(`${theme}|${style}`);
   const [range, setRange] = useState<RangeKey>('24h');
@@ -164,6 +179,17 @@ function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocke
     setCursor(b.endIdx === null ? null : mid);
   }), [m, manual, range, setScope]);
   const live = useCallback(() => manual(() => setCursor(null)), [manual]);
+  // 커맨드 센터에서 넘어온 초점 — 첫 마운트에 한 번만 적용
+  useEffect(() => {
+    if (!handoff) return;
+    const inc = handoff.incidentId ? m.incidents.find((i) => i.id === handoff.incidentId) : undefined;
+    if (inc) pickIncident(inc);
+    else if (handoff.incidentId) {
+      const b = m.blindSpots.find((x) => x.id === handoff.incidentId);
+      if (b) onBlind(b);
+    } else if (handoff.region) setScope(handoff.region);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const selectServer = useCallback((id: string) => vt(() => setServer(id)), [vt]);
   const chooseScope = useCallback((s: Scope) => vt(() => setScope(s)), [vt, setScope]);
   const nowTs = m.ds.times[m.last];
@@ -183,6 +209,7 @@ function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocke
         theme={theme} onTheme={onTheme} serverCount={m.ds.servers.length}
         motion={motion} onMotion={onMotion}
         style={style} onStyle={(s) => withViewTransition(() => onStyle(s), motion === 'full')} themeLocked={themeLocked}
+        onCommand={onCommand}
         replay={{
           ...replay,
           progress: replay.win && replay.pos !== null ? (replay.pos - replay.win.from) / Math.max(1, replay.win.to - replay.win.from) : 0,

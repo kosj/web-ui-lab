@@ -126,6 +126,22 @@
 
 ---
 
+### 1-6. 커맨드 센터 · 세계 지도 · 영화 FUI (v0.6, 2026-11-14)
+
+검색 결과 요약에 근거한다(원문 직접 열람 아님). 적용 방식은 `knowledge/command-center.md` §2에 있다.
+
+| 출처 | 요점 |
+|---|---|
+| [GitHub — How we built the GitHub globe](https://github.blog/engineering/engineering-principles/how-we-built-the-github-globe/) | 실제 PR·활동 데이터가 지구본의 호·점을 그린다 — 움직임 자체가 서비스가 살아 있다는 증거 |
+| [Cloudflare — Radar 개편 이야기](https://blog.cloudflare.com/radar-redesign/) | 2026년 10월 첫 화면을 위젯 격자에서 상단 세계 지도 + 아래 탭 차트로 바꿨다. 초기 시안은 "너무 빽빽"했다. 공격 지도는 방향 있는 흐름선이다 |
+| [Mark Coleran 인터뷰 (Pushing Pixels)](https://www.pushing-pixels.org/?p=18414) | 영화 인터페이스도 장면 구도 원칙(빛·형태·움직임)으로 시선을 이끈다. 생김새보다 느낌이 중요하다 |
+| [Territory Studio — Sci-fi interfaces and emerging technology](https://medium.com/territory-film/sci-fi-interfaces-and-emerging-technology-d8390b1c1b33) | SF UI일수록 엄격한 절제가 필요하다 |
+| [InfoQ — SpaceX Dragon의 웹 기술 화면](https://www.infoq.com/news/2020/06/javascript-spacex-dragon/) | 비행 화면은 Chromium·JS 기반이다. 임무 단계에 필요한 정보만 보인다 |
+| [SaaSFrame — Designing Bento Grids That Actually Work (2026)](https://www.saasframe.io/blog/designing-bento-grids-that-actually-work-a-2026-practical-guide) | 크기가 다른 칸은 콘텐츠 위계가 분명할 때만 쓴다. 모두 같은 무게면 일반 격자를 쓴다 |
+| [Natural Earth via world-atlas](https://github.com/topojson/world-atlas) | 1:110m 육지 TopoJSON(퍼블릭 도메인). 점묘 대륙의 원본이다 |
+
+---
+
 ## 2. 렉 보드에 적용할 디자인 규칙
 
 > 각 규칙 끝의 괄호는 근거가 된 출처다. "(추론)"이라고 적은 부분은 출처들을 조합해 이 프로젝트에 맞게 도출한 판단이다.
