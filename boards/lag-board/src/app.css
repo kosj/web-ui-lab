@@ -1108,8 +1108,8 @@ body::before {
   gap: var(--sp-4);
   grid-template-columns: minmax(0, 1fr);
 }
-/* 통신사 표(6열)가 잘리지 않을 만큼 넓을 때만 나란히 */
-@media (min-width: 1480px) {
+/* 통신사 표(7열, 패킷 흐름 포함)가 잘리지 않을 만큼 넓을 때만 나란히 */
+@media (min-width: 1800px) {
   .row-split {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
     align-items: start;
@@ -1353,4 +1353,218 @@ body::before {
 .split-note svg {
   color: var(--tier-notice);
   flex: none;
+}
+
+/* ───────── 모션: 롤링 숫자 ───────── */
+.rn {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+.rn-track {
+  display: inline-flex;
+}
+.rn-digit {
+  position: relative;
+  display: inline-block;
+  line-height: 1.15;
+  clip-path: inset(0 -0.1em);
+}
+.rn-ghost {
+  visibility: hidden;
+}
+.rn-col {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-slow-01) var(--ease-spring);
+  will-change: transform;
+}
+.rn-col > span {
+  display: block;
+  height: 1.15em;
+  line-height: 1.15;
+}
+.rn-digit,
+.rn-sym {
+  animation: ds-fade-in var(--dur-moderate-02) var(--ease-productive-enter);
+}
+
+/* ───────── 모션: 시간 커서 오버레이 ───────── */
+.chart-wrap {
+  position: relative;
+}
+.chart-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  pointer-events: none;
+  border-left: 1.5px solid var(--select);
+  opacity: 0;
+  transition: transform var(--dur-moderate-02) var(--ease-productive), opacity var(--dur-fast-02) linear;
+  will-change: transform;
+}
+.chart-future {
+  position: absolute;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--surface-1) 72%, transparent);
+  transform-origin: right center;
+  display: none;
+  transition: transform var(--dur-moderate-02) var(--ease-productive);
+}
+:root[data-replay='on'] .chart-future {
+  display: block;
+}
+/* 재생 중에는 틱 간격과 같은 길이로 선형 이동 → 끊김 없이 흐른다 */
+:root[data-replay='on'] .chart-cursor,
+:root[data-replay='on'] .chart-future {
+  transition-duration: var(--dur-stream);
+  transition-timing-function: linear;
+}
+
+/* ───────── 모션: 재생 컨트롤 ───────── */
+.replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.seg-tight button {
+  padding: 4px 7px;
+  font-size: var(--fs-11);
+}
+.clock.replaying {
+  border-color: var(--select);
+  color: var(--ink-1);
+}
+.clock.replaying svg {
+  color: var(--ink-1);
+}
+.replay-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.replay-progress i {
+  display: block;
+  height: 100%;
+  background: var(--select);
+  transform-origin: left center;
+  transition: transform var(--dur-stream) linear;
+}
+.motion-toggle.is-on {
+  color: var(--ink-1);
+}
+.motion-toggle:not(.is-on) svg {
+  opacity: 0.5;
+}
+
+/* ───────── 모션: 경보 (expressive — 악화될 때 한 번만) ───────── */
+.pulse-host {
+  position: relative;
+  display: inline-flex;
+}
+.pulse-ring {
+  --ring: var(--ink-2);
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: ds-ring var(--dur-slow-02) var(--ease-expressive-exit) 2;
+}
+.pulse-host .pulse-ring {
+  border-radius: 6px;
+}
+.ring-notice { --ring: var(--tier-notice); }
+.ring-warning { --ring: var(--tier-warning); }
+.ring-critical { --ring: var(--tier-critical); }
+.tile {
+  position: relative;
+}
+.summary-icon {
+  position: relative;
+}
+.summary-icon .pulse-ring {
+  border-radius: 12px;
+}
+/* 값·아이콘 교체 시 짧은 크로스페이드 */
+.swap-in {
+  animation: ds-fade-in var(--dur-moderate-02) var(--ease-productive-enter);
+}
+
+/* 새 장애 카드 등장 — 위에서 내려오며 나타남 + 등급 색 링 한 번 */
+.incident.is-fresh {
+  animation: ds-enter-down var(--dur-slow-01) var(--ease-expressive-enter), ds-ring var(--dur-slow-02) var(--ease-expressive-exit) 2;
+}
+.incident.tier-ring-notice { --ring: var(--tier-notice); }
+.incident.tier-ring-warning { --ring: var(--tier-warning); }
+.incident.tier-ring-critical { --ring: var(--tier-critical); }
+.incident-replay {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  cursor: pointer;
+}
+.incident-replay:hover {
+  color: var(--ink-1);
+  border-color: var(--select);
+}
+
+/* 원인 기여 막대 — 비중이 미끄러지듯 바뀐다 */
+.segbar span {
+  transition: flex-grow var(--dur-slow-01) var(--ease-productive);
+}
+.segbar span.is-empty {
+  min-width: 0;
+}
+
+/* 타일·KPI 상태 변화 — 배경·테두리 색이 부드럽게 */
+.tile,
+.isp-cell,
+.chip .dot,
+.summary {
+  transition: background-color var(--dur-moderate-02) var(--ease-productive), border-color var(--dur-moderate-02) var(--ease-productive);
+}
+
+/* ───────── 모션: 패킷 흐름 레인 ───────── */
+.lane-col {
+  min-width: 128px;
+}
+.lane-col .muted {
+  font-weight: 500;
+  margin-left: 2px;
+}
+.packet-lane {
+  display: block;
+  width: 120px;
+  height: 16px;
+}
+.lane-legend {
+  font-size: var(--fs-12);
+  margin-top: calc(var(--sp-2) * -1);
+}
+
+/* 좁은 화면: 수집 상태는 점만 남겨 상단 도구를 두 줄 안에 */
+@media (max-width: 640px) {
+  .feed-health {
+    font-size: 0;
+    gap: 0;
+  }
+  .topbar-tools {
+    gap: 6px;
+  }
 }

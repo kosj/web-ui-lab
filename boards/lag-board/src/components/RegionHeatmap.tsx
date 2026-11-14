@@ -8,6 +8,7 @@ import { binMean, CAUSE_ORDER, RANGE_BIN, rangeIdx, type RangeKey } from '../lib
 import type { Tokens } from '../lib/theme';
 import { useChart } from '../charts/useChart';
 import { useLatest } from '../lib/useLatest';
+import { ChartCursor } from '../charts/ChartCursor';
 import { median } from '../analytics/stats';
 
 type RowKey = 'ALL' | RegionId;
@@ -46,7 +47,6 @@ export function RegionHeatmap(props: {
     const causeColor = [k.causeInfra, k.causeNetwork, k.causeServer, k.causeClient];
     const labelEvery = range === '1h' ? 10 : range === '6h' ? 60 : 120;
     const interval = (i: number) => Math.round(m.ds.times[ends[i]] / 60000) % labelEvery === 0;
-    const cursorBin = binOf(t);
     const patchIn = PATCH_TIME >= m.ds.times[from] && PATCH_TIME <= m.ds.times[to];
     const patchBin = binOf(m.viewFrom + Math.round((PATCH_TIME - m.ds.times[m.viewFrom]) / 60000));
     const selectedRow = rows.findIndex((r) => r.key === region);
@@ -117,7 +117,6 @@ export function RegionHeatmap(props: {
           markLine: {
             silent: true, symbol: 'none', animation: false,
             data: [
-              { xAxis: cursorBin, lineStyle: { color: k.select, width: 1.5, type: 'solid' }, label: { show: false } },
               ...(patchIn ? [{
                 xAxis: patchBin, lineStyle: { color: k.ink3, width: 1, type: 'solid' },
                 label: { show: true, position: 'start', formatter: `${NEW_CLIENT_VERSION} 배포`, color: k.ink2, fontSize: 10, distance: 4 },
@@ -142,11 +141,11 @@ export function RegionHeatmap(props: {
         },
       ],
     };
-  }, [m, from, to, bin, rows, k, t, region, range]);
+  }, [m, from, to, bin, rows, k, region, range]);
 
   const onCellRef = useLatest(onCell);
   const onIncidentRef = useLatest(onIncident);
-  const { ref } = useChart(option, {
+  const { ref, instance } = useChart(option, {
     onReady: (c) => {
       c.on('click', (p: { seriesType?: string; value?: unknown }) => {
         const v = p.value as number[];
@@ -174,7 +173,10 @@ export function RegionHeatmap(props: {
           </button>
         </div>
       </header>
-      <div ref={ref} className="chart" style={{ height: rows.length * 24 + 4 * 17 + 70 }} hidden={asTable} aria-label="권역 × 시간 히트맵" />
+      <div className="chart-wrap" hidden={asTable}>
+        <div ref={ref} className="chart" style={{ height: rows.length * 24 + 4 * 17 + 70 }} aria-label="권역 × 시간 히트맵" />
+        <ChartCursor chart={instance} index={Math.floor((t - from) / bin)} grids={[0, 1]} mask />
+      </div>
       {asTable && <RegionTable t={t} from={from} to={to} rows={rows} />}
     </section>
   );

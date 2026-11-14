@@ -1,9 +1,11 @@
 import type { BoardModel } from '../analytics/model';
 import { REGIONS, THRESHOLDS, TIER_LABEL, type RegionId } from '../data/config';
 import { fmtCompact, fmtInt } from '../lib/format';
-import { binMean, rangeIdx, serverNow, type RangeKey } from '../lib/view';
+import { binMean, rangeIdx, serverNow, TIER_RANK, type RangeKey } from '../lib/view';
 import { CauseBadge, TIER_ICON } from './Badges';
 import { Sparkline } from './Sparkline';
+import { RollingNumber } from './RollingNumber';
+import { useEscalation } from '../lib/useEscalation';
 
 export function ServerGrid(props: {
   m: BoardModel; t: number; range: RangeKey; region: 'ALL' | RegionId; selected: string; onSelect: (id: string) => void;
@@ -39,32 +41,9 @@ export function ServerGrid(props: {
                 <div key={rack} className="rack">
                   <span className="rack-label">{r.dc} · 랙 {rack}</span>
                   <div className="tiles">
-                    {servers.filter((s) => s.rack === rack).map((s) => {
-                      const now = serverNow(m, s.id, t);
-                      const Icon = TIER_ICON[now.tier];
-                      const tone = now.tier === 'notice' || now.tier === 'warning' || now.tier === 'critical' ? now.tier : 'neutral';
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          className={`tile tile-${now.tier} ${selected === s.id ? 'is-selected' : ''}`}
-                          onClick={() => onSelect(s.id)}
-                          aria-pressed={selected === s.id}
-                          aria-label={`${s.id} ${s.name} 체감 지연 ${fmtInt(now.el)}ms ${TIER_LABEL[now.tier]}`}
-                        >
-                          <span className="tile-top">
-                            <span className="tile-id">{s.id}</span>
-                            <span className="tile-name">{s.name}</span>
-                          </span>
-                          <span className="tile-value num">{fmtInt(now.el)}<small>ms</small></span>
-                          <Sparkline values={binMean(m.an[s.id].el, sFrom, to, bin)} yMax={THRESHOLDS.warning} threshold={THRESHOLDS.notice} tone={tone} height={22} label={`${s.id} 추이`} />
-                          <span className="tile-foot">
-                            <span className={`tile-tier tier-ink-${now.tier}`}><Icon size={12} strokeWidth={2.4} aria-hidden />{TIER_LABEL[now.tier]}</span>
-                            {now.dominant ? <CauseBadge cause={now.dominant} size="s" /> : <span className="muted num">{fmtCompact(now.ccu)}명</span>}
-                          </span>
-                        </button>
-                      );
-                    })}
+                    {servers.filter((s) => s.rack === rack).map((s) => (
+                      <ServerTile key={s.id} m={m} id={s.id} name={s.name} t={t} sFrom={sFrom} bin={bin} selected={selected === s.id} onSelect={onSelect} />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -73,5 +52,37 @@ export function ServerGrid(props: {
         })}
       </div>
     </section>
+  );
+}
+
+function ServerTile({ m, id, name, t, sFrom, bin, selected, onSelect }: {
+  m: BoardModel; id: string; name: string; t: number; sFrom: number; bin: number; selected: boolean; onSelect: (id: string) => void;
+}) {
+  const now = serverNow(m, id, t);
+  const Icon = TIER_ICON[now.tier];
+  const tone = now.tier === 'notice' || now.tier === 'warning' || now.tier === 'critical' ? now.tier : 'neutral';
+  // 등급이 올라가는 순간에만 한 번 링이 퍼진다 (주의 이상으로 악화될 때)
+  const pulse = useEscalation(TIER_RANK[now.tier]);
+  const showPulse = pulse > 0 && TIER_RANK[now.tier] >= TIER_RANK.notice;
+  return (
+    <button
+      type="button"
+      className={`tile tile-${now.tier} ${selected ? 'is-selected' : ''}`}
+      onClick={() => onSelect(id)}
+      aria-pressed={selected}
+      aria-label={`${id} ${name} 체감 지연 ${fmtInt(now.el)}ms ${TIER_LABEL[now.tier]}`}
+    >
+      {showPulse && <span key={pulse} className={`pulse-ring ring-${now.tier}`} aria-hidden />}
+      <span className="tile-top">
+        <span className="tile-id">{id}</span>
+        <span className="tile-name">{name}</span>
+      </span>
+      <span className="tile-value"><RollingNumber text={fmtInt(now.el)} /><small>ms</small></span>
+      <Sparkline values={binMean(m.an[id].el, sFrom, t, bin)} yMax={THRESHOLDS.warning} threshold={THRESHOLDS.notice} tone={tone} height={22} label={`${id} 추이`} />
+      <span className="tile-foot">
+        <span className={`tile-tier tier-ink-${now.tier}`}><Icon size={12} strokeWidth={2.4} aria-hidden />{TIER_LABEL[now.tier]}</span>
+        {now.dominant ? <CauseBadge key={now.dominant} cause={now.dominant} size="s" /> : <span className="muted num">{fmtCompact(now.ccu)}명</span>}
+      </span>
+    </button>
   );
 }

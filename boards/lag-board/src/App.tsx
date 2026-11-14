@@ -16,6 +16,8 @@ import { ServerDetail } from './components/ServerDetail';
 import { MethodNote } from './components/MethodNote';
 import { DistributionHeatmap } from './components/DistributionHeatmap';
 import { IspDrilldown } from './components/IspDrilldown';
+import { MotionContext, useMotionPref, withViewTransition } from './lib/motion';
+import { useReplay } from './lib/useReplay';
 
 type Scope = 'ALL' | RegionId;
 
@@ -27,8 +29,13 @@ export function App() {
     return () => clearTimeout(id);
   }, []);
   const { mode, toggle } = useTheme();
+  const motion = useMotionPref();
   if (!model) return <Loading />;
-  return <Board m={model} theme={mode} onTheme={toggle} />;
+  return (
+    <MotionContext.Provider value={motion.mode}>
+      <Board m={model} theme={mode} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle} />
+    </MotionContext.Provider>
+  );
 }
 
 function Loading() {
@@ -44,7 +51,9 @@ function worstServer(m: BoardModel, t: number) {
   return m.ds.servers.map((s) => ({ id: s.id, el: m.an[s.id].el[t] })).sort((a, b) => b.el - a.el)[0].id;
 }
 
-function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; onTheme: () => void }) {
+function Board({ m, theme, onTheme, motion, onMotion }: {
+  m: BoardModel; theme: 'dark' | 'light'; onTheme: () => void; motion: 'full' | 'reduced'; onMotion: () => void;
+}) {
   const tokens = useTokens(theme);
   const [range, setRange] = useState<RangeKey>('24h');
   const [cursor, setCursor] = useState<number | null>(null);
@@ -56,12 +65,52 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
   const [selectedInc, setSelectedInc] = useState<string | null>(null);
   const t = cursor ?? m.last;
 
+  // 장애 재생 — 커서를 자동으로 앞으로 보낸다. 끝까지 가면 LIVE로 돌아가거나(현재까지 재생) 끝 시점에 멈춘다
+  const replay = useReplay(
+    (idx) => setCursor(idx >= m.last ? null : idx),
+    () => {},
+    m.last,
+  );
+  const { stop: stopReplay } = replay;
+  useEffect(() => {
+    const on = replay.playing ? 'on' : 'off';
+    document.documentElement.setAttribute('data-replay', on);
+    return () => document.documentElement.setAttribute('data-replay', 'off');
+  }, [replay.playing]);
+  /** 사용자가 직접 시점을 고르면 재생은 끝낸다 */
+  const manual = useCallback((fn: () => void) => { stopReplay(); fn(); }, [stopReplay]);
+  const vt = useCallback((fn: () => void) => withViewTransition(fn, motion === 'full' && !replay.playing), [motion, replay.playing]);
+
   const changeRange = useCallback((r: RangeKey) => {
+    stopReplay();
     setRange(r);
     setCursor((c) => (c !== null && c < rangeIdx(m, r).from ? null : c));
-  }, [m]);
+  }, [m, stopReplay]);
+
+  const selectIncident = useCallback((inc: Incident, at: number) => {
+    setSelectedInc(inc.id);
+    setScope(inc.cause === 'client' ? 'ALL' : inc.region ?? 'ALL');
+    if (inc.scopeType === 'isp' && inc.isps?.[0]) setIsp(inc.isps[0].id);
+    const worst = [...inc.serverIds].sort((a, b) => m.an[b].el[at] - m.an[a].el[at])[0];
+    setServer(worst);
+  }, [m, setScope]);
+
+  const replayIncident = useCallback((inc: Incident) => {
+    const from = Math.max(m.viewFrom, inc.onsetIdx - 20);
+    const to = Math.min(m.last, (inc.endIdx ?? m.last) + 15);
+    selectIncident(inc, inc.peakIdx);
+    if (from < rangeIdx(m, range).from) setRange('24h');
+    replay.start({ from, to }, 10);
+  }, [m, range, replay, selectIncident]);
+
+  const replayRange = useCallback(() => {
+    const { from } = rangeIdx(m, range);
+    const start = cursor !== null && cursor < m.last - 10 ? cursor : from;
+    replay.start({ from: start, to: m.last });
+  }, [m, range, cursor, replay]);
 
   const pickIncident = useCallback((inc: Incident) => {
+    stopReplay();
     setSelectedInc(inc.id);
     setScope(inc.cause === 'client' ? 'ALL' : inc.region ?? 'ALL');
     if (inc.scopeType === 'isp' && inc.isps?.[0]) setIsp(inc.isps[0].id);
@@ -71,24 +120,29 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
     if (!ongoing && inc.peakIdx < rangeIdx(m, range).from) setRange('24h');
     const worst = [...inc.serverIds].sort((a, b) => m.an[b].el[at] - m.an[a].el[at])[0];
     setServer(worst);
-  }, [m, range, setScope]);
+  }, [m, range, setScope, stopReplay]);
 
   const onCell = useCallback((idx: number, region: Scope) => {
+    stopReplay();
     setCursor(idx >= m.last ? null : idx);
     setScope(region);
     if (region !== 'ALL') {
       const ids = m.ds.servers.filter((s) => s.region === region).map((s) => s.id);
       setServer(ids.sort((a, b) => m.an[b].el[idx] - m.an[a].el[idx])[0]);
     }
-  }, [m, setScope]);
+  }, [m, setScope, stopReplay]);
 
   const onIsp = useCallback((region: RegionId, id: string | null) => {
-    setScopeRaw(region);
-    setIsp(id);
-  }, []);
+    vt(() => {
+      setScopeRaw(region);
+      setIsp(id);
+    });
+  }, [vt]);
 
-  const onCursor = useCallback((idx: number) => setCursor(idx >= m.last ? null : idx), [m]);
-  const live = useCallback(() => setCursor(null), []);
+  const onCursor = useCallback((idx: number) => manual(() => setCursor(idx >= m.last ? null : idx)), [m, manual]);
+  const live = useCallback(() => manual(() => setCursor(null)), [manual]);
+  const selectServer = useCallback((id: string) => vt(() => setServer(id)), [vt]);
+  const chooseScope = useCallback((s: Scope) => vt(() => setScope(s)), [vt, setScope]);
   const nowTs = m.ds.times[m.last];
   const cursorTs = cursor === null ? null : m.ds.times[cursor];
 
@@ -100,7 +154,17 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
 
   return (
     <div className="app">
-      <TopBar nowTs={nowTs} cursorTs={cursorTs} range={range} onRange={changeRange} onLive={live} theme={theme} onTheme={onTheme} serverCount={m.ds.servers.length} />
+      <TopBar
+        nowTs={nowTs} cursorTs={cursorTs} range={range} onRange={changeRange} onLive={live}
+        theme={theme} onTheme={onTheme} serverCount={m.ds.servers.length}
+        motion={motion} onMotion={onMotion}
+        replay={{
+          ...replay,
+          progress: replay.win && replay.pos !== null ? (replay.pos - replay.win.from) / Math.max(1, replay.win.to - replay.win.from) : 0,
+          posTs: replay.pos !== null ? m.ds.times[replay.pos] : null,
+          onPlay: replayRange,
+        }}
+      />
       <main className="board">
         <SummaryBanner m={m} t={t} onPick={pickIncident} />
         <KpiStrip m={m} t={t} range={range} />
@@ -111,7 +175,7 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
             {scopeChips.map((c) => {
               const tier = tierOf(c.v);
               return (
-                <button key={c.key} type="button" className="chip" aria-pressed={scope === c.key} onClick={() => setScope(c.key)}>
+                <button key={c.key} type="button" className="chip" aria-pressed={scope === c.key} onClick={() => chooseScope(c.key)}>
                   <span className={`dot dot-${tier}`} aria-hidden />
                   {c.label}
                   <span className="num muted">{fmtInt(c.v)}</span>
@@ -128,7 +192,7 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
             <RegionHeatmap m={m} t={t} range={range} tokens={tokens} region={scope} onCell={onCell} onIncident={pickIncident} />
             <CauseBreakdown m={m} t={t} range={range} tokens={tokens} scope={scope} onCursor={onCursor} />
           </div>
-          <IncidentList m={m} t={t} region={scope} selectedId={selectedInc} onPick={pickIncident} />
+          <IncidentList m={m} t={t} region={scope} selectedId={selectedInc} onPick={pickIncident} onReplay={replayIncident} />
         </div>
 
         <div className="row-split">
@@ -136,7 +200,7 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
           <DistributionHeatmap m={m} t={t} range={range} tokens={tokens} scope={scope} isp={isp} onCursor={onCursor} onClearIsp={() => setIsp(null)} />
         </div>
 
-        <ServerGrid m={m} t={t} range={range} region={scope} selected={server} onSelect={setServer} />
+        <ServerGrid m={m} t={t} range={range} region={scope} selected={server} onSelect={selectServer} />
         <ServerDetail m={m} t={t} range={range} tokens={tokens} serverId={server} />
         <MethodNote />
       </main>

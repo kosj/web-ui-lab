@@ -1,0 +1,82 @@
+/*
+ * web-ui-lab 모션 토큰 v0.1
+ *
+ * 원칙 (knowledge/motion.md)
+ *  - 모션은 장식이 아니라 "상태 변화·시간 흐름·인과"를 설명할 때만 쓴다.
+ *  - productive(빠르고 조용함)가 기본. expressive(느리고 눈에 띔)는 장애 등장·등급 상승 같은 경보에만.
+ *  - 반복 애니메이션은 LIVE 표시와 패킷 흐름처럼 "지금 흐르고 있다"는 의미가 있을 때만.
+ *  - 모든 모션은 data-motion="reduced"에서 꺼지고, 사용자는 상단 토글로 언제든 끌 수 있다 (WCAG 2.2.2).
+ *
+ * 지속시간·이징 값: IBM Carbon motion 토큰 (@carbon/motion)
+ * 스프링: stiffness 260 / damping 24 감쇠 스프링을 CSS linear()로 샘플링 (오버슈트 약 3%)
+ */
+
+:root {
+  --dur-fast-01: 70ms;
+  --dur-fast-02: 110ms;
+  --dur-moderate-01: 150ms;
+  --dur-moderate-02: 240ms;
+  --dur-slow-01: 400ms;
+  --dur-slow-02: 700ms;
+
+  --ease-productive: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --ease-productive-enter: cubic-bezier(0, 0, 0.38, 0.9);
+  --ease-productive-exit: cubic-bezier(0.2, 0, 1, 0.9);
+  --ease-expressive: cubic-bezier(0.4, 0.14, 0.3, 1);
+  --ease-expressive-enter: cubic-bezier(0, 0, 0.3, 1);
+  --ease-expressive-exit: cubic-bezier(0.4, 0.14, 1, 1);
+  --ease-spring: linear(0, 0.042, 0.126, 0.235, 0.354, 0.471, 0.581, 0.68, 0.764, 0.835, 0.891, 0.936, 0.969, 0.993,
+    1.009, 1.02, 1.025, 1.028, 1.027, 1.026, 1.023, 1.02, 1.017, 1.014, 1.011, 1.008, 1.006, 1.004, 1.003, 1.001, 1.001,
+    1, 1, 0.999, 0.999, 0.999, 1);
+
+  /* 재생 중 시간 커서처럼 연속으로 움직이는 것 — 틱 간격과 같은 길이의 선형 이동 */
+  --dur-stream: 120ms;
+}
+
+/* 모션 줄이기: 앱이 data-motion을 설정하기 전에는 OS 설정을 따른다 */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) *,
+  :root:not([data-motion='full']) *::before,
+  :root:not([data-motion='full']) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* 공용 키프레임 */
+@keyframes ds-enter-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+}
+@keyframes ds-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--ring, var(--ink-2)) 70%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px color-mix(in oklab, var(--ring, var(--ink-2)) 0%, transparent);
+  }
+}
+@keyframes ds-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* View Transitions — 드릴다운 전환 (productive) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-moderate-02);
+  animation-timing-function: var(--ease-productive);
+}

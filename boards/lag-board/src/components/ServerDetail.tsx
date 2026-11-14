@@ -8,6 +8,9 @@ import { useChart } from '../charts/useChart';
 import { swatch, timeAxes, tooltipStyle } from '../charts/common';
 import { decompositionOption } from './CauseBreakdown';
 import { CauseBadge, TierPill } from './Badges';
+import { ChartCursor } from '../charts/ChartCursor';
+import { useMotionOn } from '../lib/motion';
+import { RollingNumber } from './RollingNumber';
 
 interface LineSpec {
   name: string;
@@ -27,19 +30,19 @@ function niceCeil(v: number) {
   return 10 * p;
 }
 
-function metricOption(k: Tokens, labels: string[], minutes: number[], labelEvery: number, unit: string, lines: LineSpec[], cursorBin: number, hLine?: { v: number; label: string; color: string }) {
+function metricOption(k: Tokens, labels: string[], minutes: number[], labelEvery: number, unit: string, lines: LineSpec[], motion: boolean, hLine?: { v: number; label: string; color: string }) {
   const axes = timeAxes(k, labels, minutes, labelEvery);
   const series: Record<string, unknown>[] = [];
   for (const l of lines) {
     if (l.bandFrom) {
-      series.push({ name: `${l.name}-lo`, type: 'line', stack: l.name, data: l.bandFrom, symbol: 'none', lineStyle: { opacity: 0 }, silent: true, tooltip: { show: false } });
+      series.push({ id: `${l.name}-lo`, name: `${l.name}-lo`, type: 'line', stack: l.name, data: l.bandFrom, symbol: 'none', lineStyle: { opacity: 0 }, silent: true, tooltip: { show: false } });
       series.push({
-        name: `${l.name}-band`, type: 'line', stack: l.name, symbol: 'none', lineStyle: { opacity: 0 }, silent: true,
+        id: `${l.name}-band`, name: `${l.name}-band`, type: 'line', stack: l.name, symbol: 'none', lineStyle: { opacity: 0 }, silent: true,
         areaStyle: { color: l.color, opacity: 0.12 }, data: l.data.map((v, i) => Math.max(0, v - l.bandFrom![i])),
       });
     }
     series.push({
-      name: l.name, type: 'line', data: l.data, symbol: 'none', smooth: false,
+      id: l.name, name: l.name, type: 'line', data: l.data, symbol: 'none', smooth: false,
       lineStyle: { color: l.color, width: l.width ?? 2, type: l.reference ? 'dotted' : 'solid', cap: 'round', join: 'round' },
       itemStyle: { color: l.color }, z: l.reference ? 1 : 3,
     });
@@ -48,12 +51,15 @@ function metricOption(k: Tokens, labels: string[], minutes: number[], labelEvery
   last.markLine = {
     silent: true, symbol: 'none', animation: false,
     data: [
-      { xAxis: cursorBin, lineStyle: { color: k.select, width: 1.5, type: 'solid' }, label: { show: false } },
       ...(hLine ? [{ yAxis: hLine.v, lineStyle: { color: hLine.color, width: 1, type: 'solid' }, label: { formatter: hLine.label, position: 'insideStartTop', color: k.ink2, fontSize: 10 } }] : []),
     ],
   };
   return {
-    animation: false,
+    // 서버를 바꾸면 같은 지표 선이 새 서버 값으로 모핑된다
+    animation: motion,
+    animationDuration: 450,
+    animationDurationUpdate: 450,
+    animationEasingUpdate: 'cubicInOut' as const,
     textStyle: { fontFamily: k.fontSans },
     grid: { left: 40, right: 10, top: 10, bottom: 24 },
     ...axes,
@@ -72,15 +78,18 @@ function metricOption(k: Tokens, labels: string[], minutes: number[], labelEvery
   };
 }
 
-function Mini({ title, sub, option, group }: { title: string; sub: string; option: Record<string, unknown>; group: string }) {
-  const { ref } = useChart(option, { group });
+function Mini({ title, sub, option, group, cursor }: { title: string; sub: string; option: Record<string, unknown>; group: string; cursor: number }) {
+  const { ref, instance } = useChart(option, { group, merge: true });
   return (
     <figure className="mini">
       <figcaption>
         <b>{title}</b>
         <span className="muted">{sub}</span>
       </figcaption>
-      <div ref={ref} className="chart" style={{ height: 150 }} />
+      <div className="chart-wrap">
+        <div ref={ref} className="chart" style={{ height: 150 }} />
+        <ChartCursor chart={instance} index={cursor} mask />
+      </div>
     </figure>
   );
 }
@@ -104,7 +113,10 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
   const { from, to } = rangeIdx(m, range);
   const bin = RANGE_BIN[range];
   const labelEvery = range === '1h' ? 15 : range === '6h' ? 120 : 360;
-  const group = `detail-${serverId}`;
+  // 그룹은 서버와 무관하게 고정 — 서버를 바꿔도 차트를 다시 만들지 않고 모핑한다
+  const group = 'server-detail';
+  const motion = useMotionOn();
+  const cursor = Math.floor((t - from) / bin);
 
   const built = useMemo(() => {
     const starts: number[] = [];
@@ -112,12 +124,11 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
     const ends = starts.map((s) => Math.min(to, s + bin - 1));
     const labels = ends.map((e) => hhmm(m.ds.times[e]));
     const minutes = ends.map((e) => Math.round(m.ds.times[e] / 60000));
-    const cursorBin = Math.min(starts.length - 1, Math.max(0, Math.floor((t - from) / bin)));
     const b = (arr: ArrayLike<number>) => binMean(arr, from, to, bin).map((v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : NaN));
     const mo = (unit: string, lines: LineSpec[], h?: { v: number; label: string; color: string }) =>
-      metricOption(k, labels, minutes, labelEvery, unit, lines, cursorBin, h);
+      metricOption(k, labels, minutes, labelEvery, unit, lines, motion, h);
     return {
-      decomp: decompositionOption({ m, agg: { base: a.base, excess: a.excess, total: a.el }, from, to, bin, t, k, labelEvery, compact: false }),
+      decomp: decompositionOption({ m, agg: { base: a.base, excess: a.excess, total: a.el }, from, to, bin, k, labelEvery, compact: false, motion }),
       rtt: mo('ms', [
         { name: '전일 p95', data: b(a.baselines.rttP95.med), color: k.ink3, width: 1.5, reference: true },
         { name: 'RTT p50', data: b(mx.rttP50), color: k.ink2, width: 1.5 },
@@ -144,12 +155,12 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
         { name: NEW_CLIENT_VERSION, data: b(mx.frameNew), color: k.causeClient },
       ], { v: 50, label: '스톨 50ms', color: k.tierNotice }),
     };
-  }, [m, a, mx, from, to, bin, t, k, labelEvery]);
+  }, [m, a, mx, from, to, bin, k, labelEvery, motion]);
 
-  const decompRef = useChart(built.decomp, { group }).ref;
+  const decomp = useChart(built.decomp, { group, merge: true });
 
   return (
-    <section className="card detail-card" aria-label={`${sv.id} 상세`}>
+    <section className="card detail-card" aria-label={`${sv.id} 상세`} style={{ viewTransitionName: 'server-detail' }}>
       <header className="detail-head">
         <div className="detail-title">
           <span className="eyebrow">서버 상세</span>
@@ -157,7 +168,7 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
           <p className="card-sub">{r.name} {r.city} · {sv.dc} 랙 {sv.rack} · 동접 {fmtCompact(now.ccu)}명 · 신버전 비율 {Math.round(mx.newShare[t] * 100)}%</p>
         </div>
         <div className="detail-now">
-          <span className="detail-el num">{fmtInt(now.el)}<small>ms</small></span>
+          <span className="detail-el"><RollingNumber text={fmtInt(now.el)} /><small>ms</small></span>
           <TierPill tier={now.tier} />
           {now.dominant && <CauseBadge cause={now.dominant} />}
         </div>
@@ -165,16 +176,19 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
 
       <figure className="mini wide">
         <figcaption><b>체감 지연 구성</b><span className="muted">네트워크 + 서버 + 클라 성분, 기준선 위 초과분을 원인별로 표시</span></figcaption>
-        <div ref={decompRef} className="chart" style={{ height: 200 }} />
+        <div className="chart-wrap">
+          <div ref={decomp.ref} className="chart" style={{ height: 200 }} />
+          <ChartCursor chart={decomp.instance} index={cursor} mask />
+        </div>
       </figure>
 
       <div className="minis">
-        <Mini group={group} title="RTT" sub="p50–p95 밴드" option={built.rtt} />
-        <Mini group={group} title="지터" sub="ms" option={built.jitter} />
-        <Mini group={group} title="패킷 손실" sub="%" option={built.loss} />
-        <Mini group={group} title="서버 틱 p99" sub="ms · 20Hz" option={built.tick} />
-        <Mini group={group} title="호스트 자원" sub="CPU steal · I/O 대기 %" option={built.host} />
-        <Mini group={group} title="클라 프레임 p95" sub="버전별 ms" option={built.frame} />
+        <Mini group={group} cursor={cursor} title="RTT" sub="p50–p95 밴드" option={built.rtt} />
+        <Mini group={group} cursor={cursor} title="지터" sub="ms" option={built.jitter} />
+        <Mini group={group} cursor={cursor} title="패킷 손실" sub="%" option={built.loss} />
+        <Mini group={group} cursor={cursor} title="서버 틱 p99" sub="ms · 20Hz" option={built.tick} />
+        <Mini group={group} cursor={cursor} title="호스트 자원" sub="CPU steal · I/O 대기 %" option={built.host} />
+        <Mini group={group} cursor={cursor} title="클라 프레임 p95" sub="버전별 ms" option={built.frame} />
       </div>
       <div className="detail-legend">
         <LegendRow items={[

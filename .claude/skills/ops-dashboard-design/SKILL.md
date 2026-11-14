@@ -1,6 +1,6 @@
 ---
 name: ops-dashboard-design
-description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응) 대시보드나 보드 UI를 만들거나 고칠 때 사용. 정보 구조, 디자인 토큰, 상태·원인 색 규칙, 차트 규칙(ECharts), 상호작용, 시각 QA 절차를 담는다. 렉 보드 같은 게임 서비스 보드, 지표 히트맵, KPI 스트립, 장애 판정 카드, 서버 그리드를 만들 때 먼저 읽는다.
+description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응) 대시보드나 보드 UI를 만들거나 고칠 때 사용. 정보 구조, 디자인 토큰, 상태·원인 색 규칙, 차트 규칙(ECharts), 모션(재생·롤링 숫자·경보 링·입자 흐름·뷰 전환), 상호작용, 시각 QA 절차를 담는다. 렉 보드 같은 게임 서비스 보드, 지표 히트맵, KPI 스트립, 장애 판정 카드, 서버 그리드를 만들 때 먼저 읽는다.
 ---
 
 # 관제 대시보드 디자인 스킬
@@ -74,6 +74,20 @@ description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응
 - 장애 카드를 클릭하면 범위 필터, 통신사(통신사 범위 장애), 가장 나쁜 서버, 시점(해소된 장애는 피크)이 한꺼번에 설정된다.
 - 상호작용 흐름은 Playwright로 실제 클릭을 재현해 검증한다(예: 장애 카드 클릭 → 필터 칩 해제 → 분포 변화).
 - 측정 자체의 상태(수집 정상·서버 수·주기)를 상단에 상시 표시한다.
+
+## 4-1. 모션 (상세: `knowledge/motion.md`, 토큰: `design-system/motion.css`)
+
+- **모션의 역할:** 시간 흐름, 상태 변화, 흐름 세 가지를 설명할 때만 쓴다. 장식용 반복 모션은 금지한다(LIVE 점만 예외).
+- **productive/expressive 구분:** 값·커서·전환은 productive(`--dur-moderate-02`~`--dur-slow-01`, `--ease-productive`)로 한다. 새 장애 등장과 등급 상승처럼 악화를 알릴 때만 expressive로 한다.
+- **재생(replay):** `useReplay`(rAF, React 갱신 120ms)를 쓴다. 커서는 `ChartCursor` HTML 오버레이로 그린다. `:root[data-replay=on]`일 때 미래 영역을 흐리게 하고 커서를 선형 이동시킨다. 사용자가 직접 시점을 고르면 재생을 끝낸다. 현재 시각에 도달하면 LIVE로 복귀한다.
+- **커서를 차트 옵션에 넣지 않는다:** 옵션 memo에서 커서(t) 의존성을 빼야 재생 중 차트를 다시 그리지 않는다.
+- **차트 모핑:** series에 id를 주고 `useChart(option, { merge: true })`로 쓴다. 칸이 수천 개인 히트맵은 `animation: false`로 둔다.
+- **숫자:** `RollingNumber`를 쓴다. 고스트 숫자로 기준선을 유지하고, 롤링 중에는 tabular-nums를 쓴다.
+- **경보 링:** `useEscalation(rank)` 키로 `.pulse-ring`을 다시 마운트해서, 등급이 오를 때만 2회 재생되게 한다.
+- **입자·캔버스 모션:** 반드시 지표를 인코딩해야 하고, 강조 배율은 범례에 적는다. 모션이 꺼지면 같은 인코딩의 정지 화면을 그린다. IntersectionObserver와 `visibilitychange`로 멈춘다.
+- **드릴다운 전환:** `withViewTransition(fn, enabled)`로 감싼다. 재생 중이거나 모션이 꺼져 있으면 즉시 적용한다.
+- **접근성:** 상단 모션 토글 하나로 모든 모션을 멈춘다(`<html data-motion>`, WCAG 2.2.2). 기본값은 `prefers-reduced-motion`을 따른다.
+- **검증:** Playwright로 재생 버튼 클릭 → 시계와 커서 transform이 진행하는지 확인한다. 캔버스는 `toDataURL()`을 두 번 비교해 모션 켜짐이면 바뀌고 꺼짐이면 그대로인지 본다. 녹화(`recordVideo`) 후 ffmpeg로 mp4·gif를 만든다.
 
 ## 5. 반응형
 

@@ -1,7 +1,21 @@
-import { History, Moon, Radio, Sun } from 'lucide-react';
+import { History, Moon, Pause, Play, Radio, Sparkles, Square, Sun } from 'lucide-react';
 import { dateLabel, hhmm } from '../lib/format';
 import { RANGE_LABEL, type RangeKey } from '../lib/view';
 import type { ThemeMode } from '../lib/theme';
+import { REPLAY_SPEEDS, type ReplaySpeed } from '../lib/useReplay';
+
+export interface ReplayControls {
+  playing: boolean;
+  active: boolean;
+  speed: ReplaySpeed;
+  progress: number;
+  posTs: number | null;
+  onPlay: () => void;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  changeSpeed: (s: ReplaySpeed) => void;
+}
 
 export function TopBar(props: {
   nowTs: number;
@@ -12,11 +26,14 @@ export function TopBar(props: {
   theme: ThemeMode;
   onTheme: () => void;
   serverCount: number;
+  motion: 'full' | 'reduced';
+  onMotion: () => void;
+  replay: ReplayControls;
 }) {
-  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount } = props;
-  const live = cursorTs === null;
+  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount, motion, onMotion, replay } = props;
+  const live = cursorTs === null && !replay.active;
   return (
-    <header className="topbar">
+    <header className={`topbar ${replay.active ? 'is-replaying' : ''}`}>
       <div className="brand">
         <span className="brand-mark" aria-hidden>
           <svg viewBox="0 0 20 20" width="20" height="20">
@@ -44,7 +61,39 @@ export function TopBar(props: {
             </button>
           ))}
         </div>
-        {live ? (
+
+        {/* 장애 재생 — 시간 커서를 자동으로 진행시켜 렉이 번지는 순서를 보여준다 */}
+        <div className="replay" role="group" aria-label="재생">
+          {!replay.active ? (
+            <button type="button" className="btn" onClick={replay.onPlay} title="선택한 기간을 처음부터(또는 선택 시점부터) 재생">
+              <Play size={14} aria-hidden />
+              재생
+            </button>
+          ) : (
+            <>
+              <button type="button" className="icon-btn" onClick={replay.playing ? replay.pause : replay.resume} aria-label={replay.playing ? '일시정지' : '이어서 재생'}>
+                {replay.playing ? <Pause size={15} /> : <Play size={15} />}
+              </button>
+              <button type="button" className="icon-btn" onClick={replay.stop} aria-label="재생 끝내기">
+                <Square size={13} />
+              </button>
+              <div className="seg seg-tight" role="group" aria-label="재생 속도 (1초당 분)">
+                {REPLAY_SPEEDS.map((s) => (
+                  <button key={s} type="button" aria-pressed={replay.speed === s} onClick={() => replay.changeSpeed(s)}>
+                    {s}분/초
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {replay.active ? (
+          <span className="clock replaying" aria-live="off">
+            <Play size={13} strokeWidth={2.4} aria-hidden />
+            <span className="num">재생 {replay.posTs !== null ? hhmm(replay.posTs) : ''} KST</span>
+          </span>
+        ) : live ? (
           <span className="clock live">
             <Radio size={14} strokeWidth={2.2} aria-hidden />
             <b>LIVE</b>
@@ -57,10 +106,32 @@ export function TopBar(props: {
             <button type="button" className="btn" onClick={onLive}>LIVE로 복귀</button>
           </span>
         )}
+        <button
+          type="button"
+          className={`icon-btn motion-toggle ${motion === 'full' ? 'is-on' : ''}`}
+          onClick={onMotion}
+          aria-pressed={motion === 'full'}
+          aria-label={motion === 'full' ? '모션 끄기' : '모션 켜기'}
+          title={motion === 'full' ? '모션 켜짐 — 눌러서 끄기' : '모션 꺼짐 — 눌러서 켜기'}
+        >
+          <Sparkles size={16} />
+        </button>
         <button type="button" className="icon-btn" onClick={onTheme} aria-label={theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환'}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
+      {replay.active && (
+        <div
+          className="replay-progress"
+          role="progressbar"
+          aria-label="재생 진행"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(replay.progress * 100)}
+        >
+          <i style={{ transform: `scaleX(${replay.progress})` }} />
+        </div>
+      )}
     </header>
   );
 }

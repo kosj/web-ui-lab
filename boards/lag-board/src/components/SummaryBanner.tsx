@@ -4,6 +4,7 @@ import { fmtCompact, fmtDuration, hhmm } from '../lib/format';
 import { activeIncidents, incidentTierAt, TIER_RANK } from '../lib/view';
 import { CauseBadge, TIER_ICON, TierPill } from './Badges';
 import type { Incident } from '../analytics/incidents';
+import { useEscalation } from '../lib/useEscalation';
 
 /** 화면 최상단 한 줄 요약 — "어디서, 얼마나, 왜"를 문장으로 */
 export function SummaryBanner({ m, t, onPick }: { m: BoardModel; t: number; onPick: (inc: Incident) => void }) {
@@ -14,12 +15,14 @@ export function SummaryBanner({ m, t, onPick }: { m: BoardModel; t: number; onPi
   const ccu = m.global.ccu[t];
   const worst = active[0]?.tier ?? 'smooth';
   const Icon = TIER_ICON[worst];
+  const pulse = useEscalation(TIER_RANK[worst]);
 
   return (
     <section className={`summary summary-${worst}`} aria-live="polite">
       <div className="summary-head">
         <span className={`summary-icon tier-ink-${worst}`} aria-hidden>
-          <Icon size={22} strokeWidth={2.2} />
+          <Icon key={worst} className="swap-in" size={22} strokeWidth={2.2} />
+          {pulse > 0 && <span key={pulse} className={`pulse-ring ring-${worst}`} />}
         </span>
         <p className="summary-line">
           {active.length === 0 ? (

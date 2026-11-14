@@ -9,6 +9,9 @@ import { useChart } from '../charts/useChart';
 import { swatch, timeAxes, tooltipStyle } from '../charts/common';
 import { useLatest } from '../lib/useLatest';
 import { CAUSE_ICON } from './Badges';
+import { RollingNumber } from './RollingNumber';
+import { ChartCursor } from '../charts/ChartCursor';
+import { useMotionOn } from '../lib/motion';
 
 export function causeColors(k: Tokens): Record<Cause | 'base', string> {
   return { base: k.causeBase, infra: k.causeInfra, network: k.causeNetwork, server: k.causeServer, client: k.causeClient };
@@ -17,9 +20,9 @@ export function causeColors(k: Tokens): Record<Cause | 'base', string> {
 /** 누적 영역: 기준선(무채) 위에 원인별 초과 지연을 쌓고, 등급 임계선을 같은 축(ms)에 표시 */
 export function decompositionOption(opts: {
   m: BoardModel; agg: Pick<AggSeries, 'base' | 'excess'> & { total: ArrayLike<number> }; from: number; to: number; bin: number;
-  t: number; k: Tokens; labelEvery: number; compact?: boolean;
+  k: Tokens; labelEvery: number; compact?: boolean; motion?: boolean;
 }) {
-  const { m, agg, from, to, bin, t, k, labelEvery, compact } = opts;
+  const { m, agg, from, to, bin, k, labelEvery, compact, motion = false } = opts;
   const starts: number[] = [];
   for (let s = from; s <= to; s += bin) starts.push(s);
   const ends = starts.map((s) => Math.min(to, s + bin - 1));
@@ -28,6 +31,7 @@ export function decompositionOption(opts: {
   const col = causeColors(k);
   const layers: (Cause | 'base')[] = ['base', ...CAUSE_ORDER];
   const series = layers.map((key) => ({
+    id: key,
     name: key === 'base' ? '기준선' : CAUSE_LABEL[key],
     type: 'line',
     stack: 'el',
@@ -45,7 +49,6 @@ export function decompositionOption(opts: {
     { v: THRESHOLDS.warning, c: k.tierWarning, l: TIER_LABEL.warning },
     { v: THRESHOLDS.critical, c: k.tierCritical, l: TIER_LABEL.critical },
   ].filter((th) => th.v <= Math.max(peak * 1.15, THRESHOLDS.warning));
-  const cursorBin = Math.min(starts.length - 1, Math.max(0, Math.floor((t - from) / bin)));
   const patchIdx = m.viewFrom + Math.round((PATCH_TIME - m.ds.times[m.viewFrom]) / 60000);
   const patchBin = patchIdx >= from && patchIdx <= to ? Math.floor((patchIdx - from) / bin) : -1;
   const axes = timeAxes(k, labels, minutes, labelEvery, compact ? undefined : 'ms');
@@ -58,7 +61,6 @@ export function decompositionOption(opts: {
         lineStyle: { color: th.c, width: 1, type: 'solid', opacity: 0.9 },
         label: { formatter: `${th.l} ${th.v}`, position: 'insideStartTop', color: k.ink2, fontSize: 10 },
       })),
-      { xAxis: cursorBin, lineStyle: { color: k.select, width: 1.5, type: 'solid' }, label: { show: false } },
       ...(patchBin >= 0 ? [{
         xAxis: patchBin, lineStyle: { color: k.ink3, width: 1, type: 'solid' },
         label: { show: !compact, formatter: `${NEW_CLIENT_VERSION} 배포`, position: 'insideEndTop', color: k.ink2, fontSize: 10 },
@@ -67,7 +69,11 @@ export function decompositionOption(opts: {
   };
 
   return {
-    animation: false,
+    // 범위·권역이 바뀌면 같은 원인 층이 새 값으로 모핑된다 (series id 고정 + merge)
+    animation: motion,
+    animationDuration: 500,
+    animationDurationUpdate: 450,
+    animationEasingUpdate: 'cubicInOut' as const,
     textStyle: { fontFamily: k.fontSans },
     grid: { left: compact ? 40 : 48, right: compact ? 8 : 16, top: compact ? 12 : 26, bottom: 26 },
     ...axes,
@@ -98,13 +104,15 @@ export function CauseBreakdown(props: { m: BoardModel; t: number; range: RangeKe
   const { from, to } = rangeIdx(m, range);
   const bin = RANGE_BIN[range];
 
+  const motion = useMotionOn();
   const option = useMemo(
-    () => decompositionOption({ m, agg: { base: agg.base, excess: agg.excess, total: agg.mean }, from, to, bin, t, k, labelEvery: range === '1h' ? 10 : range === '6h' ? 60 : 180 }),
-    [m, agg, from, to, bin, t, k, range],
+    () => decompositionOption({ m, agg: { base: agg.base, excess: agg.excess, total: agg.mean }, from, to, bin, k, motion, labelEvery: range === '1h' ? 10 : range === '6h' ? 60 : 180 }),
+    [m, agg, from, to, bin, k, range, motion],
   );
   const onCursorRef = useLatest(onCursor);
   const rangeRef = useLatest({ from, bin });
-  const { ref } = useChart(option, {
+  const { ref, instance } = useChart(option, {
+    merge: true,
     onReady: (c) => {
       c.getZr().on('click', (e: { offsetX: number; offsetY: number }) => {
         if (!c.containPixel('grid', [e.offsetX, e.offsetY])) return;
@@ -139,15 +147,19 @@ export function CauseBreakdown(props: { m: BoardModel; t: number; range: RangeKe
         </div>
       </header>
       <div className="breakdown-body">
-        <div ref={ref} className="chart" style={{ height: 260 }} hidden={asTable} aria-label={`${scopeLabel} 체감 지연 구성 누적 영역 차트`} />
+        <div className="chart-wrap" hidden={asTable}>
+          <div ref={ref} className="chart" style={{ height: 260 }} aria-label={`${scopeLabel} 체감 지연 구성 누적 영역 차트`} />
+          <ChartCursor chart={instance} index={Math.floor((t - from) / bin)} mask />
+        </div>
         {asTable && <BreakdownTable m={m} agg={agg} from={from} to={to} />}
         <aside className="contrib" aria-label="선택 시점 원인 기여">
           <span className="eyebrow">{hhmm(m.ds.times[t])} 원인 기여</span>
-          <div className="contrib-total"><span className="num">{fmtInt(total)}</span><small>ms</small></div>
+          <div className="contrib-total"><RollingNumber text={fmtInt(total)} /><small>ms</small></div>
           <div className="segbar" role="img" aria-label="원인별 비중 막대">
             <span style={{ flexGrow: agg.base[t], background: col.base }} />
-            {ex.filter((e) => e.v >= 0.5).map((e) => (
-              <span key={e.c} style={{ flexGrow: e.v, background: col[e.c] }} />
+            {/* 항상 4칸을 유지해 flex-grow 전환으로 비중 변화가 미끄러지게 한다 */}
+            {ex.map((e) => (
+              <span key={e.c} className={e.v < 0.5 ? 'is-empty' : ''} style={{ flexGrow: e.v < 0.5 ? 0 : e.v, background: col[e.c] }} />
             ))}
           </div>
           <ul className="contrib-list">

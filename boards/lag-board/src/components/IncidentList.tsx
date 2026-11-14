@@ -1,4 +1,5 @@
-import { Activity, Ban, Layers } from 'lucide-react';
+import { useRef } from 'react';
+import { Activity, Ban, Layers, Play } from 'lucide-react';
 import type { BoardModel } from '../analytics/model';
 import { isActiveAt } from '../analytics/model';
 import type { Evidence, Incident } from '../analytics/incidents';
@@ -15,13 +16,24 @@ const EVIDENCE_META: Record<Evidence['kind'], { icon: typeof Layers; label: stri
 
 export function IncidentList(props: {
   m: BoardModel; t: number; region: 'ALL' | RegionId; selectedId: string | null; onPick: (inc: Incident) => void;
+  onReplay: (inc: Incident) => void;
 }) {
-  const { m, t, region, selectedId, onPick } = props;
+  const { m, t, region, selectedId, onPick, onReplay } = props;
+  // 처음 화면에 있던 카드는 그대로, 이후 새로 나타난 장애만 등장 모션 (재생 중 장애 발생 순간).
+  // 처음 본 시각을 기억해 1초 동안 is-fresh를 유지 — 다음 재생 틱에 클래스가 빠져 애니메이션이 끊기지 않게.
+  const seen = useRef<Map<string, number> | null>(null);
   const visible = m.incidents
     .filter((i) => i.onsetIdx <= t)
     .filter((i) => region === 'ALL' || i.region === region || i.cause === 'client');
   const active = visible.filter((i) => isActiveAt(i, t)).reverse();
   const past = visible.filter((i) => !isActiveAt(i, t)).reverse();
+  if (seen.current === null) seen.current = new Map(visible.map((i) => [i.id, 0]));
+  const now = performance.now();
+  // 화면에서 사라진 장애는 잊는다 → 재생으로 다시 나타나면 다시 등장 모션
+  const ids = new Set(visible.map((i) => i.id));
+  for (const id of [...seen.current.keys()]) if (!ids.has(id)) seen.current.delete(id);
+  for (const i of visible) if (!seen.current.has(i.id)) seen.current.set(i.id, now);
+  const fresh = new Set(visible.filter((i) => now - (seen.current!.get(i.id) ?? 0) < 1000).map((i) => i.id));
 
   return (
     <section className="card incidents-card">
@@ -36,7 +48,7 @@ export function IncidentList(props: {
       <ol className="incident-list">
         {[...active, ...past].map((inc) => (
           <li key={inc.id}>
-            <IncidentCard m={m} t={t} inc={inc} active={isActiveAt(inc, t)} selected={selectedId === inc.id} onPick={onPick} />
+            <IncidentCard m={m} t={t} inc={inc} active={isActiveAt(inc, t)} selected={selectedId === inc.id} fresh={fresh.has(inc.id)} onPick={onPick} onReplay={onReplay} />
           </li>
         ))}
         {visible.length === 0 && <li className="empty">이 기간·권역에서 감지된 장애가 없습니다.</li>}
@@ -45,19 +57,24 @@ export function IncidentList(props: {
   );
 }
 
-function IncidentCard({ m, t, inc, active, selected, onPick }: {
-  m: BoardModel; t: number; inc: Incident; active: boolean; selected: boolean; onPick: (inc: Incident) => void;
+function IncidentCard({ m, t, inc, active, selected, fresh, onPick, onReplay }: {
+  m: BoardModel; t: number; inc: Incident; active: boolean; selected: boolean; fresh: boolean;
+  onPick: (inc: Incident) => void; onReplay: (inc: Incident) => void;
 }) {
   const end = inc.endIdx ?? t;
   const tier = incidentTierAt(m, inc, active ? t : inc.peakIdx);
   const conf = Math.round(inc.confidence * 100);
   return (
-    <article className={`incident ${active ? 'is-active' : 'is-past'} ${selected ? 'is-selected' : ''}`}>
+    <article className={`incident ${active ? 'is-active' : 'is-past'} ${selected ? 'is-selected' : ''} ${fresh ? 'is-fresh' : ''} tier-ring-${tier}`}>
       <button type="button" className="incident-hit" onClick={() => onPick(inc)} aria-label={`${inc.title} 상세 보기`} />
       <div className="incident-top">
         <CauseBadge cause={inc.cause} />
         <TierPill tier={tier} resolved={!active} />
         <span className="incident-id num">{inc.id}</span>
+        <button type="button" className="incident-replay" onClick={() => onReplay(inc)} aria-label={`${inc.title} 재생`} title="시작 20분 전부터 재생">
+          <Play size={11} strokeWidth={2.6} aria-hidden />
+          재생
+        </button>
       </div>
       <h3>{inc.title}</h3>
       <dl className="incident-facts">

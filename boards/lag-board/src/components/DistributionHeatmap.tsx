@@ -10,6 +10,7 @@ import { mix } from '../lib/color';
 import { useChart } from '../charts/useChart';
 import { tooltipStyle } from '../charts/common';
 import { useLatest } from '../lib/useLatest';
+import { ChartCursor } from '../charts/ChartCursor';
 
 const L = Math.log10;
 
@@ -32,10 +33,10 @@ export function DistributionHeatmap(props: {
   );
   const col = Math.min(dist.starts.length - 1, Math.max(0, Math.floor((t - from) / bin)));
 
-  const option = useMemo(() => buildOption(m, dist, k, range, col), [m, dist, k, range, col]);
+  const option = useMemo(() => buildOption(m, dist, k, range), [m, dist, k, range]);
   const onCursorRef = useLatest(onCursor);
   const geo = useLatest({ from, bin });
-  const { ref } = useChart(option, {
+  const { ref, instance } = useChart(option, {
     onReady: (c) => {
       c.getZr().on('click', (e: { offsetX: number; offsetY: number }) => {
         if (!c.containPixel('grid', [e.offsetX, e.offsetY])) return;
@@ -75,7 +76,10 @@ export function DistributionHeatmap(props: {
           </button>
         </div>
       </header>
-      <div ref={ref} className="chart" style={{ height: 270 }} hidden={asTable} aria-label={`${label} 체감 지연 분포 히트맵`} />
+      <div className="chart-wrap" hidden={asTable}>
+        <div ref={ref} className="chart" style={{ height: 270 }} aria-label={`${label} 체감 지연 분포 히트맵`} />
+        <ChartCursor chart={instance} index={col} mask />
+      </div>
       {asTable && <DistTable dist={dist} col={col} />}
       {now && (
         <div className="dist-foot">
@@ -96,7 +100,7 @@ export function DistributionHeatmap(props: {
   );
 }
 
-function buildOption(m: BoardModel, dist: Distribution, k: Tokens, range: RangeKey, cursorCol: number) {
+function buildOption(m: BoardModel, dist: Distribution, k: Tokens, range: RangeKey) {
   const labels = dist.ends.map((e) => hhmm(m.ds.times[e]));
   const labelEvery = range === '1h' ? 10 : range === '6h' ? 60 : 180;
   const minutes = dist.ends.map((e) => Math.round(m.ds.times[e] / 60000));
@@ -163,7 +167,7 @@ function buildOption(m: BoardModel, dist: Distribution, k: Tokens, range: RangeK
         encode: { x: 0, y: 1, tooltip: [3] },
         markLine: {
           silent: true, symbol: 'none', animation: false,
-          data: [...refLines, ...thLines, { xAxis: cursorCol, lineStyle: { color: k.select, width: 1.5, type: 'solid' }, label: { show: false } }],
+          data: [...refLines, ...thLines],
         },
       },
       ...lineSeries('p50', dist.p50, k.ink2, 1.5),

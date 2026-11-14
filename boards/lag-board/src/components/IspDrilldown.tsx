@@ -9,6 +9,8 @@ import type { Tokens } from '../lib/theme';
 import { useChart } from '../charts/useChart';
 import { swatch, timeAxes, tooltipStyle } from '../charts/common';
 import { TIER_ICON, TierPill } from './Badges';
+import { ChartCursor } from '../charts/ChartCursor';
+import { LOSS_EMPHASIS, PacketLane } from './PacketLane';
 import { CircleCheck } from 'lucide-react';
 
 export interface IspRow {
@@ -138,7 +140,6 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
     const ends = starts.map((s) => Math.min(to, s + bin - 1));
     const labels = ends.map((e) => hhmm(m.ds.times[e]));
     const minutes = ends.map((e) => Math.round(m.ds.times[e] / 60000));
-    const cursorBin = Math.min(starts.length - 1, Math.max(0, Math.floor((t - from) / bin)));
     const axes = timeAxes(k, labels, minutes, range === '1h' ? 15 : range === '6h' ? 120 : 360, 'RTT p95 ms');
     const defs = REGION_ISPS[region];
     const focusDef = defs.find((d) => d.id === focus)!;
@@ -160,10 +161,6 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
       data: binMean(m.ds.isp[region][focus].rttP95, from, to, bin).map((v) => Math.round(v)),
       lineStyle: { color: k.ink1, width: 2.25 }, itemStyle: { color: k.ink1 },
       endLabel: { show: true, formatter: focusDef.name, color: k.ink1, fontSize: 11, fontWeight: 600, distance: 6 },
-      markLine: {
-        silent: true, symbol: 'none', animation: false,
-        data: [{ xAxis: cursorBin, lineStyle: { color: k.select, width: 1.5, type: 'solid' }, label: { show: false } }],
-      },
     });
     return {
       animation: false,
@@ -182,8 +179,8 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
       },
       series,
     };
-  }, [m, region, focus, from, to, bin, t, k, range]);
-  const { ref } = useChart(option);
+  }, [m, region, focus, from, to, bin, k, range]);
+  const { ref, instance } = useChart(option);
 
   return (
     <div className="isp-region">
@@ -193,6 +190,7 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
             <tr>
               <th scope="col">통신사</th>
               <th scope="col">유저 비중</th>
+              <th scope="col" className="lane-col">경로 흐름 <span className="muted">유저 → DC</span></th>
               <th scope="col">RTT p50 · p95</th>
               <th scope="col">전일 대비</th>
               <th scope="col">지터 · 손실</th>
@@ -221,6 +219,13 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
                       <span className="muted num">{fmtCompact(row.users)}명</span>
                     </span>
                   </td>
+                  <td className="lane-col">
+                    <PacketLane
+                      rtt={row.rttP50} jitter={row.jitter} loss={row.loss}
+                      color={row.anomaly ? laneColor(k, row.tier) : k.ink2} track={k.lineStrong}
+                      label={`${row.def.name} 경로: RTT ${fmtInt(row.rttP50)}ms, 지터 ${fmtInt(row.jitter)}ms, 손실 ${fmtFixed(row.loss, 2)}%`}
+                    />
+                  </td>
                   <td className="num">{fmtInt(row.rttP50)} · <b>{fmtInt(row.rttP95)}</b>ms</td>
                   <td className={`num ${row.anomaly ? 'delta-up' : 'muted'}`}>{row.anomaly ? `경로 이상 ${signed(row.delta, 'ms')}` : Math.abs(row.delta) < 5 ? '평소 수준' : signed(row.delta, 'ms')}</td>
                   <td className="num">{fmtInt(row.jitter)}ms · {fmtFixed(row.loss, row.loss < 1 ? 2 : 1)}%</td>
@@ -236,6 +241,9 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
           </tbody>
         </table>
       </div>
+      <p className="lane-legend muted">
+        경로 흐름: 입자가 건너는 시간 = RTT, 뭉침·벌어짐 = 지터, 중간에 떨어져 사라짐 = 패킷 손실(실제의 {LOSS_EMPHASIS}배로 강조). 모션을 끄면 정지 화면으로 바뀝니다.
+      </p>
       <figure className="mini isp-trend">
         <figcaption>
           <b>통신사별 RTT p95 추이</b>
@@ -245,8 +253,15 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
             <span><i className="ref" style={{ borderColor: k.ink2 }} aria-hidden />전일 기준선</span>
           </span>
         </figcaption>
-        <div ref={ref} className="chart" style={{ height: 200 }} />
+        <div className="chart-wrap">
+          <div ref={ref} className="chart" style={{ height: 200 }} />
+          <ChartCursor chart={instance} index={Math.floor((t - from) / bin)} mask />
+        </div>
       </figure>
     </div>
   );
+}
+
+function laneColor(k: Tokens, tier: Tier) {
+  return tier === 'critical' ? k.tierCritical : tier === 'warning' ? k.tierWarning : tier === 'notice' ? k.tierNotice : k.ink1;
 }
