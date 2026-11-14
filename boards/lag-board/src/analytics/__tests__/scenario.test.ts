@@ -16,7 +16,10 @@ describe('lag cause classifier recovers injected scenarios', () => {
 
   for (const sc of SCENARIOS) {
     test(`${sc.id} ${sc.title}`, () => {
-      const inc = m.incidents.find((i) => i.cause === sc.cause);
+      // 같은 원인의 장애가 여럿일 수 있으므로 시작 시각이 가장 가까운 것을 매칭
+      const inc = m.incidents
+        .filter((i) => i.cause === sc.cause)
+        .sort((a, b) => Math.abs(m.ds.times[a.onsetIdx] - sc.start) - Math.abs(m.ds.times[b.onsetIdx] - sc.start))[0];
       expect(inc, `no ${sc.cause} incident`).toBeDefined();
       const onset = m.ds.times[inc!.onsetIdx];
       // 시작 시각 추정 오차 10분 이내
@@ -30,6 +33,13 @@ describe('lag cause classifier recovers injected scenarios', () => {
       if (sc.target.region) expect(inc!.region).toBe(sc.target.region);
       if (sc.target.rack) expect(inc!.serverIds.every((id) => m.ds.servers.find((s) => s.id === id)!.rack === sc.target.rack)).toBe(true);
       expect(inc!.confidence).toBeGreaterThan(0.7);
+      // 통신사 범위: 한 통신사에만 주입한 장애는 그 통신사로 좁혀져야 하고, 여러 통신사면 권역 범위 유지
+      if (sc.target.isps) {
+        const weights = Object.entries(sc.target.isps).sort((a, b) => b[1] - a[1]);
+        const single = weights.length === 1;
+        expect(inc!.scopeType).toBe(single ? 'isp' : 'region');
+        expect(inc!.isps?.[0] && sc.target.isps[inc!.isps[0].id]).toBeGreaterThanOrEqual(weights[1]?.[1] ?? 1);
+      }
     });
   }
 

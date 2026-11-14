@@ -36,7 +36,7 @@ export interface Tokens {
   ink1: string; ink2: string; ink3: string; select: string;
   causeInfra: string; causeNetwork: string; causeServer: string; causeClient: string; causeBase: string;
   tierSmooth: string; tierGood: string; tierNotice: string; tierWarning: string; tierCritical: string;
-  grid: string; axis: string; fontSans: string;
+  grid: string; axis: string; fontSans: string; density0: string; density1: string;
 }
 
 const MAP: Record<keyof Tokens, string> = {
@@ -44,7 +44,7 @@ const MAP: Record<keyof Tokens, string> = {
   ink1: '--ink-1', ink2: '--ink-2', ink3: '--ink-3', select: '--select',
   causeInfra: '--cause-infra', causeNetwork: '--cause-network', causeServer: '--cause-server', causeClient: '--cause-client', causeBase: '--cause-base',
   tierSmooth: '--tier-smooth', tierGood: '--tier-good', tierNotice: '--tier-notice', tierWarning: '--tier-warning', tierCritical: '--tier-critical',
-  grid: '--grid', axis: '--axis', fontSans: '--font-sans',
+  grid: '--grid', axis: '--axis', fontSans: '--font-sans', density0: '--density-0', density1: '--density-1',
 };
 
 export function readTokens(): Tokens {

@@ -19,28 +19,85 @@ export interface RegionDef {
   dc: string;
   /** 현지 시간대 (UTC 오프셋, 시간) — 동접 일주기 곡선에 사용 */
   utcOffset: number;
-  /** 정상 시 RTT p50 / p95 (ms) */
-  rttP50: number;
-  rttP95: number;
   /** 피크 동접 (서버당 평균) */
   peakCcu: number;
   servers: string[];
 }
 
 export const REGIONS: RegionDef[] = [
-  { id: 'KR', name: '한국', city: '서울', dc: 'ICN', utcOffset: 9, rttP50: 16, rttP95: 28, peakCcu: 6200,
+  { id: 'KR', name: '한국', city: '서울', dc: 'ICN', utcOffset: 9, peakCcu: 6200,
     servers: ['한빛', '미리내', '새벽별', '푸른솔', '해오름', '별무리', '가람', '다솜'] },
-  { id: 'JP', name: '일본', city: '도쿄', dc: 'NRT', utcOffset: 9, rttP50: 20, rttP95: 36, peakCcu: 4800,
+  { id: 'JP', name: '일본', city: '도쿄', dc: 'NRT', utcOffset: 9, peakCcu: 4800,
     servers: ['아침놀', '물비늘', '너울', '윤슬', '바람꽃', '나린'] },
-  { id: 'TW', name: '대만', city: '타이베이', dc: 'TPE', utcOffset: 8, rttP50: 24, rttP95: 42, peakCcu: 4100,
+  { id: 'TW', name: '대만', city: '타이베이', dc: 'TPE', utcOffset: 8, peakCcu: 4100,
     servers: ['라온', '여울', '하늬', '마루', '아라', '온새'] },
-  { id: 'SEA', name: '동남아', city: '싱가포르', dc: 'SIN', utcOffset: 8, rttP50: 36, rttP95: 62, peakCcu: 3900,
+  { id: 'SEA', name: '동남아', city: '싱가포르', dc: 'SIN', utcOffset: 8, peakCcu: 3900,
     servers: ['산들', '누리', '슬기', '도담', '그린', '이든'] },
-  { id: 'NA', name: '북미', city: '버지니아', dc: 'IAD', utcOffset: -5, rttP50: 40, rttP95: 70, peakCcu: 3600,
+  { id: 'NA', name: '북미', city: '버지니아', dc: 'IAD', utcOffset: -5, peakCcu: 3600,
     servers: ['단비', '꽃샘', '은가람', '노을', '보라'] },
-  { id: 'EU', name: '유럽', city: '프랑크푸르트', dc: 'FRA', utcOffset: 1, rttP50: 34, rttP95: 60, peakCcu: 3400,
+  { id: 'EU', name: '유럽', city: '프랑크푸르트', dc: 'FRA', utcOffset: 1, peakCcu: 3400,
     servers: ['소담', '해솔', '가온', '빛솔', '희나'] },
 ];
+
+/**
+ * 통신사(ISP) — 유저가 게임 DC까지 오는 네트워크 경로의 단위.
+ * 같은 권역이라도 통신사마다 경로(해저 케이블·국제망·피어링)가 달라 RTT가 다르다.
+ * rttP50/rttP95: 정상 시 해당 통신사 유저 → 권역 DC 왕복 지연 (ms). share: 권역 내 유저 비중.
+ */
+export interface IspDef {
+  id: string;
+  name: string;
+  share: number;
+  rttP50: number;
+  rttP95: number;
+  /** 동남아처럼 국가가 섞인 권역에서 표시 */
+  country?: string;
+}
+
+export const REGION_ISPS: Record<RegionId, IspDef[]> = {
+  KR: [
+    { id: 'KT', name: 'KT', share: 0.41, rttP50: 14, rttP95: 24 },
+    { id: 'SKB', name: 'SK브로드밴드', share: 0.29, rttP50: 15, rttP95: 26 },
+    { id: 'LGU', name: 'LG U+', share: 0.21, rttP50: 16, rttP95: 27 },
+    { id: 'KR-ETC', name: '케이블·기타', share: 0.09, rttP50: 19, rttP95: 34 },
+  ],
+  JP: [
+    { id: 'NTT', name: 'NTT', share: 0.38, rttP50: 17, rttP95: 30 },
+    { id: 'KDDI', name: 'KDDI', share: 0.27, rttP50: 19, rttP95: 33 },
+    { id: 'SBM', name: 'SoftBank', share: 0.24, rttP50: 21, rttP95: 37 },
+    { id: 'JP-ETC', name: '기타', share: 0.11, rttP50: 24, rttP95: 44 },
+  ],
+  TW: [
+    { id: 'CHT', name: 'Chunghwa Telecom', share: 0.55, rttP50: 20, rttP95: 34 },
+    { id: 'TWM', name: 'Taiwan Mobile', share: 0.24, rttP50: 24, rttP95: 42 },
+    { id: 'FET', name: 'FarEasTone', share: 0.21, rttP50: 26, rttP95: 45 },
+  ],
+  SEA: [
+    { id: 'SGT', name: 'Singtel', share: 0.22, rttP50: 6, rttP95: 12, country: '싱가포르' },
+    { id: 'TMU', name: 'TM Unifi', share: 0.2, rttP50: 16, rttP95: 28, country: '말레이시아' },
+    { id: 'TRUE', name: 'True', share: 0.2, rttP50: 34, rttP95: 55, country: '태국' },
+    { id: 'PLDT', name: 'PLDT', share: 0.18, rttP50: 52, rttP95: 88, country: '필리핀' },
+    { id: 'IDH', name: 'IndiHome', share: 0.2, rttP50: 28, rttP95: 52, country: '인도네시아' },
+  ],
+  NA: [
+    { id: 'CMCSA', name: 'Comcast', share: 0.32, rttP50: 34, rttP95: 58 },
+    { id: 'CHTR', name: 'Spectrum', share: 0.26, rttP50: 38, rttP95: 66 },
+    { id: 'ATT', name: 'AT&T', share: 0.2, rttP50: 40, rttP95: 70 },
+    { id: 'VZ', name: 'Verizon', share: 0.14, rttP50: 36, rttP95: 62 },
+    { id: 'NA-ETC', name: '기타', share: 0.08, rttP50: 48, rttP95: 86 },
+  ],
+  EU: [
+    { id: 'DTAG', name: 'Deutsche Telekom', share: 0.3, rttP50: 18, rttP95: 30 },
+    { id: 'VOD', name: 'Vodafone', share: 0.25, rttP50: 24, rttP95: 42 },
+    { id: 'ORA', name: 'Orange', share: 0.22, rttP50: 30, rttP95: 52 },
+    { id: 'BT', name: 'BT', share: 0.15, rttP50: 32, rttP95: 56 },
+    { id: 'EU-ETC', name: '기타', share: 0.08, rttP50: 38, rttP95: 66 },
+  ],
+};
+
+export function ispName(region: RegionId, id: string) {
+  return REGION_ISPS[region].find((i) => i.id === id)?.name ?? id;
+}
 
 export const TIERS: { id: Tier; label: string; min: number; desc: string }[] = [
   { id: 'smooth', label: '쾌적', min: 0, desc: '지연을 거의 느끼지 못함' },
@@ -100,7 +157,8 @@ export interface ScenarioDef {
   end: number | null; // null = 진행 중
   /** 램프업(분) — 장애가 최대치에 도달하는 시간 */
   rampMin: number;
-  target: { region?: RegionId; servers?: string[]; rack?: string; clientVersion?: string };
+  /** isps: 통신사별 영향 가중치(0..1). 없으면 권역 전체 동일 */
+  target: { region?: RegionId; servers?: string[]; rack?: string; clientVersion?: string; isps?: Record<string, number> };
 }
 
 export const NEW_CLIENT_VERSION = '2.14.0';
@@ -116,7 +174,13 @@ export const SCENARIOS: ScenarioDef[] = [
   {
     id: 'S2', cause: 'network', title: '동남아 해저 케이블 구간 손실',
     start: kst(14, 11, 20), end: kst(14, 13, 40), rampMin: 12,
-    target: { region: 'SEA' },
+    // 손상 케이블을 경유하는 필리핀·인도네시아 경로에 집중, 태국은 일부 우회
+    target: { region: 'SEA', isps: { PLDT: 1, IDH: 0.9, TRUE: 0.45, TMU: 0.2, SGT: 0.1 } },
+  },
+  {
+    id: 'S5', cause: 'network', title: 'LG U+ 국제망 라우팅 우회',
+    start: kst(14, 15, 10), end: kst(14, 16, 20), rampMin: 6,
+    target: { region: 'KR', isps: { LGU: 1 } },
   },
   {
     id: 'S3', cause: 'client', title: '2.14.0 패치 셰이더 컴파일 스톨',

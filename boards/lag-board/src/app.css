@@ -1101,3 +1101,256 @@ body::before {
     font-size: var(--fs-20);
   }
 }
+
+/* ───────── 통신사 · 분포 행 ───────── */
+.row-split {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 통신사 표(6열)가 잘리지 않을 만큼 넓을 때만 나란히 */
+@media (min-width: 1480px) {
+  .row-split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.h-icon {
+  vertical-align: -2px;
+  color: var(--ink-3);
+  margin-right: 2px;
+}
+
+/* 통신사 매트릭스 (전체 권역) */
+.isp-matrix {
+  display: grid;
+  gap: 6px;
+}
+.isp-matrix-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+}
+.isp-matrix-region {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: var(--fs-13);
+  font-weight: 650;
+  line-height: 1.25;
+}
+.isp-matrix-region .muted {
+  font-size: var(--fs-11);
+  font-weight: 500;
+}
+.isp-cells {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.isp-cell {
+  --c: var(--ink-3);
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px;
+  text-align: left;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  cursor: pointer;
+  min-width: 0;
+}
+.isp-cell:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.isp-cell.tile-notice,
+.isp-cell.tile-warning,
+.isp-cell.tile-critical {
+  background: color-mix(in oklab, var(--c) 10%, var(--surface-1));
+  border-color: color-mix(in oklab, var(--c) 45%, var(--line));
+}
+.isp-cell-name {
+  font-size: var(--fs-11);
+  color: var(--ink-2);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.isp-cell-val {
+  font-size: var(--fs-16);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.isp-cell-val small {
+  font-size: var(--fs-11);
+  color: var(--ink-3);
+  margin-left: 1px;
+  font-weight: 600;
+}
+.isp-cell-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-11);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.isp-cell-delta.up {
+  color: var(--ink-1);
+  font-weight: 650;
+}
+@media (max-width: 640px) {
+  .isp-matrix-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .isp-matrix-region {
+    flex-direction: row;
+    gap: 6px;
+    align-items: baseline;
+  }
+  .isp-cells {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  }
+}
+
+/* 통신사 표 (권역 선택) */
+.isp-region {
+  display: grid;
+  gap: var(--sp-3);
+}
+.isp-table tbody tr {
+  cursor: pointer;
+}
+.isp-table tbody tr:hover {
+  background: var(--hover);
+}
+.isp-table tbody tr.is-hot th,
+.isp-table tbody tr.is-hot td {
+  background: color-mix(in oklab, var(--tier-notice) 6%, transparent);
+}
+.isp-table tbody tr.is-selected th,
+.isp-table tbody tr.is-selected td {
+  background: var(--surface-3);
+}
+.isp-table tbody tr.is-selected th {
+  box-shadow: inset 3px 0 0 var(--select);
+}
+.isp-table tbody tr.is-focus th .row-btn::after {
+  content: '변화 최대';
+  margin-left: 6px;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.row-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+.share-cell,
+.el-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.share-bar {
+  display: inline-block;
+  width: 56px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.share-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink-3);
+}
+.delta-up {
+  color: var(--ink-1);
+  font-weight: 700;
+}
+.isp-trend {
+  padding-bottom: 0;
+}
+
+/* 분포 히트맵 */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 10px;
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--select);
+  background: var(--surface-3);
+  color: var(--ink-1);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+.density-legend {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: var(--fs-12);
+  color: var(--ink-2);
+}
+.density-ramp {
+  display: inline-block;
+  width: 64px;
+  height: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--density-0), var(--density-1));
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.line-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.line-key i {
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--ink-1);
+}
+.line-key i.p50 {
+  border-top: 1.5px solid var(--ink-2);
+}
+.dist-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px var(--sp-3);
+  align-items: center;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+}
+.dist-foot b {
+  color: var(--ink-1);
+}
+.split-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-s);
+  background: color-mix(in oklab, var(--tier-notice) 12%, var(--surface-1));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tier-notice) 45%, transparent);
+  color: var(--ink-1);
+  font-size: var(--fs-12);
+}
+.split-note svg {
+  color: var(--tier-notice);
+  flex: none;
+}

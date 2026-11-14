@@ -49,6 +49,10 @@
   --tier-critical: #d03b3b;
   --tier-good-ink: #0ca30c;
 
+  /* 밀도(분포 히트맵) — 무채 슬레이트 단일 램프. 원인·상태 색과 겹치지 않게 */
+  --density-0: #10141b;
+  --density-1: #e3eaf6;
+
   /* 차트 크롬 */
   --grid: rgba(148, 170, 210, 0.08);
   --axis: rgba(148, 170, 210, 0.22);
@@ -106,6 +110,8 @@
     --tier-smooth: #e9edf2;
     --tier-good: #d3dae4;
     --tier-good-ink: #006300;
+    --density-0: #ffffff;
+    --density-1: #1a2a46;
     --grid: rgba(20, 32, 56, 0.07);
     --axis: rgba(20, 32, 56, 0.25);
     --shadow-pop: 0 12px 32px rgba(15, 21, 32, 0.14), 0 0 0 1px var(--line-strong);
@@ -136,6 +142,8 @@
   --tier-smooth: #e9edf2;
   --tier-good: #d3dae4;
   --tier-good-ink: #006300;
+  --density-0: #ffffff;
+  --density-1: #1a2a46;
   --grid: rgba(20, 32, 56, 0.07);
   --axis: rgba(20, 32, 56, 0.25);
   --shadow-pop: 0 12px 32px rgba(15, 21, 32, 0.14), 0 0 0 1px var(--line-strong);

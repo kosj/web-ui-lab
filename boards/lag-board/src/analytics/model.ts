@@ -4,6 +4,7 @@
  */
 import { analyzeServer, applyTopologyRule, type ServerAnalysis } from './attribution';
 import { detectIncidents, type Incident } from './incidents';
+import { analyzeIsps, type IspModel } from './isp';
 import { weightedQuantile } from './stats';
 import { generateDataset, type Dataset } from '../data/generate';
 import { REGIONS, THRESHOLDS, WARMUP_MIN, type Cause, type RegionId } from '../data/config';
@@ -27,6 +28,7 @@ export interface BoardModel {
   last: number;
   an: Record<string, ServerAnalysis>;
   incidents: Incident[];
+  isp: IspModel;
   regions: Record<RegionId, AggSeries>;
   global: AggSeries;
 }
@@ -79,13 +81,14 @@ export function buildModel(seed?: number): BoardModel {
   const an: Record<string, ServerAnalysis> = {};
   for (const sv of ds.servers) an[sv.id] = analyzeServer(ds.metrics[sv.id], anFrom);
   applyTopologyRule(ds, an, anFrom);
-  const incidents = detectIncidents(ds, an, viewFrom);
+  const isp = analyzeIsps(ds, anFrom);
+  const incidents = detectIncidents(ds, an, viewFrom, isp);
   const regions = {} as Record<RegionId, AggSeries>;
   for (const r of REGIONS) {
     regions[r.id] = aggregate(ds, an, ds.servers.filter((s) => s.region === r.id).map((s) => s.id), viewFrom);
   }
   const global = aggregate(ds, an, ds.servers.map((s) => s.id), viewFrom);
-  return { ds, viewFrom, last: ds.minutes - 1, an, incidents, regions, global };
+  return { ds, viewFrom, last: ds.minutes - 1, an, incidents, isp, regions, global };
 }
 
 export function isActiveAt(inc: Incident, t: number) {

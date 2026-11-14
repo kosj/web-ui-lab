@@ -11,7 +11,8 @@
  */
 import { ATTR_PARAMS, type ServerAnalysis } from './attribution';
 import { cusum, median } from './stats';
-import { NEW_CLIENT_VERSION, OLD_CLIENT_VERSION, PATCH_TIME, REGIONS, THRESHOLDS, type Cause, type RegionId } from '../data/config';
+import { NEW_CLIENT_VERSION, OLD_CLIENT_VERSION, PATCH_TIME, REGION_ISPS, REGIONS, THRESHOLDS, type Cause, type RegionId } from '../data/config';
+import { ispUsers, type IspModel } from './isp';
 import type { Dataset } from '../data/generate';
 
 export interface Evidence {
@@ -20,10 +21,21 @@ export interface Evidence {
   kind: 'signal' | 'scope' | 'exclude';
 }
 
+export interface IspContribution {
+  id: string;
+  name: string;
+  /** 권역 초과 지연 중 이 통신사가 차지하는 비율 */
+  frac: number;
+  before: number;
+  during: number;
+}
+
 export interface Incident {
   id: string;
   cause: Cause;
-  scopeType: 'rack' | 'region' | 'server' | 'global';
+  scopeType: 'rack' | 'region' | 'isp' | 'server' | 'global';
+  /** 네트워크 장애: 통신사별 기여 (내림차순) */
+  isps?: IspContribution[];
   scopeLabel: string;
   region?: RegionId;
   serverIds: string[];
@@ -59,7 +71,7 @@ function windowMedian(arr: ArrayLike<number>, from: number, to: number) {
   return vals.length ? median(vals) : NaN;
 }
 
-export function detectIncidents(ds: Dataset, an: Record<string, ServerAnalysis>, fromIdx: number): Incident[] {
+export function detectIncidents(ds: Dataset, an: Record<string, ServerAnalysis>, fromIdx: number, ispModel?: IspModel): Incident[] {
   const th = ATTR_PARAMS.memberMs;
   const causes: Cause[] = ['infra', 'network', 'server', 'client'];
   const n = ds.minutes;
@@ -95,7 +107,7 @@ export function detectIncidents(ds: Dataset, an: Record<string, ServerAnalysis>,
         }
         // 실제 활성 분이 5분 미만이면 단발성 노이즈로 보고 버린다
         if (activeCount < 5) continue;
-        incidents.push(buildIncident(ds, an, cause, key, members, s, last, n));
+        incidents.push(buildIncident(ds, an, cause, key, members, s, last, n, ispModel));
       }
     }
   }
@@ -107,7 +119,7 @@ export function detectIncidents(ds: Dataset, an: Record<string, ServerAnalysis>,
 
 function buildIncident(
   ds: Dataset, an: Record<string, ServerAnalysis>, cause: Cause, key: string,
-  members: (string[] | undefined)[], s: number, last: number, n: number,
+  members: (string[] | undefined)[], s: number, last: number, n: number, ispModel?: IspModel,
 ): Incident {
   const ids = new Set<string>();
   for (let t = s; t <= last; t++) members[t]?.forEach((id) => ids.add(id));
@@ -167,11 +179,11 @@ function buildIncident(
     detectIdx = cs.alarms[alarmPos] + from;
   }
 
-  const { evidence, pattern, scopeLabel, scopeType, title } = explain(ds, an, cause, key, serverIds, first, onsetIdx, last);
+  const { evidence, pattern, scopeLabel, scopeType, title, isps } = explain(ds, an, cause, key, serverIds, first, onsetIdx, last, ispModel);
   const confidence = Math.min(0.99, 0.5 * share + 0.5 * pattern);
 
   return {
-    id: '', cause, scopeType, scopeLabel, region: cause === 'client' ? undefined : first.region,
+    id: '', cause, scopeType, scopeLabel, isps, region: cause === 'client' ? undefined : first.region,
     serverIds, onsetIdx, detectIdx, endIdx: ongoing ? null : last + 1, peakIdx, peakEl, peakUsers,
     share, confidence, evidence, title,
   };
@@ -179,8 +191,9 @@ function buildIncident(
 
 function explain(
   ds: Dataset, an: Record<string, ServerAnalysis>, cause: Cause, key: string,
-  serverIds: string[], first: Dataset['servers'][number], s: number, last: number,
+  serverIds: string[], first: Dataset['servers'][number], s: number, last: number, ispModel?: IspModel,
 ) {
+  let isps: IspContribution[] | undefined;
   const evidence: Evidence[] = [];
   const pre = (b: { med: Float32Array }) => b.med[s];
   const during = (pick: (id: string) => ArrayLike<number>) =>
@@ -225,11 +238,31 @@ function explain(
     scopeType = 'region';
     scopeLabel = `${REGION_NAME[rid]} 권역`;
     title = `${REGION_NAME[rid]} 구간 네트워크 품질 저하`;
-    evidence.push({ kind: 'scope', text: `${REGION_NAME[rid]} 서버 ${serverIds.length}/${all.length}대 동시 악화 — 랙 무관` });
-    evidence.push({ kind: 'signal', text: `RTT p95 ${fmt(rttBefore)} → ${fmt(rttDuring)}ms` });
-    evidence.push({ kind: 'signal', text: `패킷 손실 ${fmt(lossBefore, 2)}% → ${fmt(lossDuring, 1)}% · 지터 ${fmt(jitBefore)} → ${fmt(jitDuring)}ms` });
-    evidence.push({ kind: 'exclude', text: `서버 틱 정상 (p99 ${fmt(tickDuring)}ms)` });
     pattern = (serverIds.length / all.length + (tickDuring < 50 ? 1 : 0.4)) / 2;
+    isps = ispModel ? ispContributions(ds, ispModel, rid, s, last) : undefined;
+    const top = isps?.[0];
+    if (top && top.frac >= 0.7) {
+      // 통신사 경로 하나가 초과 지연 대부분을 차지 → 범위를 통신사로 좁힌다
+      const others = isps!.slice(1).map((c) => `${c.name} ${fmt(c.during - c.before, 0) === '0' ? '±0' : `+${fmt(Math.max(0, c.during - c.before))}`}ms`).join(' · ');
+      scopeType = 'isp';
+      scopeLabel = `${REGION_NAME[rid]} · ${top.name}`;
+      title = `${REGION_NAME[rid]} ${top.name} 경로 네트워크 품질 저하`;
+      evidence.push({ kind: 'scope', text: `${top.name} 유저만 악화 — 권역 초과 지연의 ${Math.round(top.frac * 100)}%` });
+      evidence.push({ kind: 'signal', text: `${top.name} 네트워크 성분 ${fmt(top.before)} → ${fmt(top.during)}ms (RTT p95 + 지터 + 손실)` });
+      evidence.push({ kind: 'scope', text: `${REGION_NAME[rid]} 서버 ${serverIds.length}/${all.length}대에 함께 반영 — 서버·랙 무관` });
+      evidence.push({ kind: 'exclude', text: `다른 통신사 정상 (${others})` });
+      evidence.push({ kind: 'exclude', text: `서버 틱 정상 (p99 ${fmt(tickDuring)}ms)` });
+      pattern = (top.frac + (tickDuring < 50 ? 1 : 0.4)) / 2;
+    } else {
+      evidence.push({ kind: 'scope', text: `${REGION_NAME[rid]} 서버 ${serverIds.length}/${all.length}대 동시 악화 — 랙 무관` });
+      evidence.push({ kind: 'signal', text: `RTT p95 ${fmt(rttBefore)} → ${fmt(rttDuring)}ms` });
+      evidence.push({ kind: 'signal', text: `패킷 손실 ${fmt(lossBefore, 2)}% → ${fmt(lossDuring, 1)}% · 지터 ${fmt(jitBefore)} → ${fmt(jitDuring)}ms` });
+      if (isps?.length) {
+        const parts = isps.filter((c) => c.frac >= 0.1).map((c) => `${c.name} ${Math.round(c.frac * 100)}%`).join(' · ');
+        evidence.push({ kind: 'scope', text: `통신사별 초과 지연 기여: ${parts}` });
+      }
+      evidence.push({ kind: 'exclude', text: `서버 틱 정상 (p99 ${fmt(tickDuring)}ms)` });
+    }
   } else if (cause === 'server') {
     const peers = regionServers(first.region).filter((sv) => sv.id !== first.id);
     const peerExcess = median(peers.map((sv) => {
@@ -259,5 +292,22 @@ function explain(
     evidence.push({ kind: 'exclude', text: `RTT·서버 틱 정상 (RTT p95 ${fmt(rttDuring)}ms, 틱 ${fmt(tickDuring)}ms)` });
     pattern = ((regions.size >= 3 ? 1 : 0.5) + (fNew > fOld * 2 ? 1 : 0.5)) / 2;
   }
-  return { evidence, pattern, scopeLabel, scopeType, title };
+  return { evidence, pattern, scopeLabel, scopeType, title, isps };
+}
+
+/** 통신사별 초과 지연 기여 = 유저 비중 × max(0, 장애 중 네트워크 성분 중앙값 − 기준선) */
+export function ispContributions(ds: Dataset, ispModel: IspModel, rid: RegionId, s: number, last: number): IspContribution[] {
+  const defs = REGION_ISPS[rid];
+  const users = defs.map((_, i) => ispUsers(ds, rid, i, s));
+  const total = users.reduce((a, b) => a + b, 0) || 1;
+  const rows = defs.map((d, i) => {
+    const a = ispModel[rid][d.id];
+    const before = a.baselines.net.med[s];
+    const during = windowMedian(a.net, s, last + 1);
+    return { id: d.id, name: d.name, w: (users[i] / total) * Math.max(0, during - before), before, during };
+  });
+  const sum = rows.reduce((a, r) => a + r.w, 0) || 1;
+  return rows
+    .map(({ w, ...r }) => ({ ...r, frac: w / sum }))
+    .sort((a, b) => b.frac - a.frac);
 }

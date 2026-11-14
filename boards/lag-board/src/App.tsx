@@ -14,6 +14,8 @@ import { IncidentList } from './components/IncidentList';
 import { ServerGrid } from './components/ServerGrid';
 import { ServerDetail } from './components/ServerDetail';
 import { MethodNote } from './components/MethodNote';
+import { DistributionHeatmap } from './components/DistributionHeatmap';
+import { IspDrilldown } from './components/IspDrilldown';
 
 type Scope = 'ALL' | RegionId;
 
@@ -46,7 +48,10 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
   const tokens = useTokens(theme);
   const [range, setRange] = useState<RangeKey>('24h');
   const [cursor, setCursor] = useState<number | null>(null);
-  const [scope, setScope] = useState<Scope>('ALL');
+  const [scope, setScopeRaw] = useState<Scope>('ALL');
+  const [isp, setIsp] = useState<string | null>(null);
+  // 권역이 바뀌면 통신사 선택은 의미가 없어지므로 해제
+  const setScope = useCallback((s: Scope) => { setScopeRaw(s); setIsp(null); }, []);
   const [server, setServer] = useState<string>(() => worstServer(m, m.last));
   const [selectedInc, setSelectedInc] = useState<string | null>(null);
   const t = cursor ?? m.last;
@@ -59,13 +64,14 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
   const pickIncident = useCallback((inc: Incident) => {
     setSelectedInc(inc.id);
     setScope(inc.cause === 'client' ? 'ALL' : inc.region ?? 'ALL');
+    if (inc.scopeType === 'isp' && inc.isps?.[0]) setIsp(inc.isps[0].id);
     const ongoing = inc.endIdx === null;
     const at = ongoing ? m.last : inc.peakIdx;
     setCursor(ongoing ? null : inc.peakIdx);
     if (!ongoing && inc.peakIdx < rangeIdx(m, range).from) setRange('24h');
     const worst = [...inc.serverIds].sort((a, b) => m.an[b].el[at] - m.an[a].el[at])[0];
     setServer(worst);
-  }, [m, range]);
+  }, [m, range, setScope]);
 
   const onCell = useCallback((idx: number, region: Scope) => {
     setCursor(idx >= m.last ? null : idx);
@@ -74,7 +80,12 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
       const ids = m.ds.servers.filter((s) => s.region === region).map((s) => s.id);
       setServer(ids.sort((a, b) => m.an[b].el[idx] - m.an[a].el[idx])[0]);
     }
-  }, [m]);
+  }, [m, setScope]);
+
+  const onIsp = useCallback((region: RegionId, id: string | null) => {
+    setScopeRaw(region);
+    setIsp(id);
+  }, []);
 
   const onCursor = useCallback((idx: number) => setCursor(idx >= m.last ? null : idx), [m]);
   const live = useCallback(() => setCursor(null), []);
@@ -118,6 +129,11 @@ function Board({ m, theme, onTheme }: { m: BoardModel; theme: 'dark' | 'light'; 
             <CauseBreakdown m={m} t={t} range={range} tokens={tokens} scope={scope} onCursor={onCursor} />
           </div>
           <IncidentList m={m} t={t} region={scope} selectedId={selectedInc} onPick={pickIncident} />
+        </div>
+
+        <div className="row-split">
+          <IspDrilldown m={m} t={t} range={range} tokens={tokens} scope={scope} isp={isp} onIsp={onIsp} />
+          <DistributionHeatmap m={m} t={t} range={range} tokens={tokens} scope={scope} isp={isp} onCursor={onCursor} onClearIsp={() => setIsp(null)} />
         </div>
 
         <ServerGrid m={m} t={t} range={range} region={scope} selected={server} onSelect={setServer} />
