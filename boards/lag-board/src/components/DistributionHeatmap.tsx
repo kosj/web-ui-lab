@@ -135,7 +135,7 @@ function buildOption(m: BoardModel, dist: Distribution, k: Tokens, range: RangeK
 
   return {
     animation: false,
-    textStyle: { fontFamily: k.fontSans },
+    textStyle: { fontFamily: k.fontChart },
     grid: { left: 40, right: 12, top: 8, bottom: 26 },
     xAxis: {
       type: 'category', data: labels, axisLine: { lineStyle: { color: k.axis } }, axisTick: { show: false },

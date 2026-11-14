@@ -83,6 +83,32 @@
   --radius-l: 14px;
 
   --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line-strong);
+
+  /* ── 구조 토큰: 스타일(design-system/styles.css)이 바꾸는 표현 방식 ── */
+  --page-bg: var(--bg);
+  --font-display: var(--font-sans); /* 제목 */
+  --font-num: var(--font-sans); /* 큰 수치·표 숫자 */
+  --font-label: var(--font-sans); /* 작은 라벨 */
+  --font-chart: var(--font-sans); /* 차트(캔버스) */
+  --label-color: var(--ink-3);
+  --label-case: none;
+  --label-track: 0.02em;
+  --card-bg: var(--surface-1);
+  --card-border: 1px solid var(--line);
+  --card-radius: var(--radius-l);
+  --card-shadow: none;
+  --card-blur: none;
+  --inset-bg: var(--surface-2); /* 카드 안 보조 면 (KPI·사건·미니 차트) */
+  --inset-radius: var(--radius-m);
+  --tile-radius: var(--radius-s);
+  --pill-radius: 6px;
+  --h2-size: var(--fs-16);
+  --h2-weight: 650;
+  --h2-track: -0.01em;
+  --num-weight: 700;
+  --num-track: -0.03em;
+  --kpi-size: var(--fs-28);
+  --pad-card: var(--sp-4) var(--sp-5);
 }
 
 @media (prefers-color-scheme: light) {

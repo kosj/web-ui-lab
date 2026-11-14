@@ -74,7 +74,7 @@ export function decompositionOption(opts: {
     animationDuration: 500,
     animationDurationUpdate: 450,
     animationEasingUpdate: 'cubicInOut' as const,
-    textStyle: { fontFamily: k.fontSans },
+    textStyle: { fontFamily: k.fontChart },
     grid: { left: compact ? 40 : 48, right: compact ? 8 : 16, top: compact ? 12 : 26, bottom: 26 },
     ...axes,
     yAxis: { ...axes.yAxis, max: (v: { max: number }) => Math.ceil(Math.max(v.max, THRESHOLDS.notice * 1.1) / 50) * 50 },

@@ -59,7 +59,7 @@ export function RegionHeatmap(props: {
 
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: [
         { left: 64, right: 16, top: 22, height: rows.length * 24 },
         { left: 64, right: 16, top: 22 + rows.length * 24 + 14, height: 4 * 17 },
@@ -96,7 +96,7 @@ export function RegionHeatmap(props: {
       tooltip: {
         trigger: 'item',
         backgroundColor: k.surface2, borderColor: k.lineStrong, borderWidth: 1, padding: [8, 10],
-        textStyle: { color: k.ink1, fontSize: 12, fontFamily: k.fontSans },
+        textStyle: { color: k.ink1, fontSize: 12, fontFamily: k.fontChart },
         extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);',
         formatter: (p: { seriesType: string; value: number[] }) => {
           if (p.seriesType === 'custom') {

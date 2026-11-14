@@ -1,0 +1,205 @@
+/*
+ * 스타일별 시그니처 처리 — 토큰만으로 안 되는 부분.
+ * 각 스타일의 "한 가지 강한 특징"만 넣고 나머지는 토큰에 맡긴다.
+ */
+
+/* ── 글래스 콕핏: 계기판 베젤(모서리 브래킷), 청록 라벨, 흰 판독값 ── */
+:root[data-style='cockpit'] .card,
+:root[data-style='cockpit'] .kpi {
+  --bezel: rgba(79, 214, 255, 0.75);
+  background-image:
+    linear-gradient(var(--bezel), var(--bezel)), linear-gradient(var(--bezel), var(--bezel)),
+    linear-gradient(var(--bezel), var(--bezel)), linear-gradient(var(--bezel), var(--bezel));
+  background-size: 14px 1.5px, 1.5px 14px, 14px 1.5px, 1.5px 14px;
+  background-position: top left, top left, bottom right, bottom right;
+  background-repeat: no-repeat;
+}
+:root[data-style='cockpit'] .card-head h2::before,
+:root[data-style='cockpit'] .section-head h2::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 0.12em;
+  border: 1.5px solid var(--select);
+}
+:root[data-style='cockpit'] .topbar {
+  background: rgba(2, 4, 6, 0.92);
+  border-bottom-color: rgba(79, 214, 255, 0.22);
+}
+:root[data-style='cockpit'] .summary-line,
+:root[data-style='cockpit'] .section-head h2 {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+:root[data-style='cockpit'] .tile-id {
+  font-family: var(--font-num);
+  color: var(--label-color);
+}
+
+/* ── 인광 터미널: 반전 제목 막대, 인광 글로, 각진 모서리 ── */
+:root[data-style='terminal'] .card-head h2,
+:root[data-style='terminal'] .section-head h2,
+:root[data-style='terminal'] .detail-title h2 {
+  display: inline-block;
+  background: #ffb000;
+  color: #000;
+  padding: 1px 8px;
+  text-transform: uppercase;
+}
+:root[data-style='terminal'] .detail-title h2 .muted {
+  color: #3a2600;
+}
+:root[data-style='terminal'] .kpi-value,
+:root[data-style='terminal'] .tile-value,
+:root[data-style='terminal'] .detail-el,
+:root[data-style='terminal'] .contrib-total {
+  text-shadow: 0 0 10px rgba(255, 176, 0, 0.35);
+}
+:root[data-style='terminal'] .topbar {
+  background: #000;
+  border-bottom: 1px solid rgba(255, 176, 0, 0.4);
+}
+:root[data-style='terminal'] .brand-text h1 {
+  color: #ffb000;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+:root[data-style='terminal'] .summary-line {
+  font-family: var(--font-display);
+  font-size: var(--fs-16);
+  letter-spacing: 0;
+}
+:root[data-style='terminal'] .board {
+  gap: var(--sp-3);
+}
+:root[data-style='terminal'] .row-main,
+:root[data-style='terminal'] .row-split,
+:root[data-style='terminal'] .row-voice,
+:root[data-style='terminal'] .row-voice-2,
+:root[data-style='terminal'] .col-charts,
+:root[data-style='terminal'] .voice-section,
+:root[data-style='terminal'] .kpis {
+  gap: var(--sp-2);
+}
+
+/* ── 에디토리얼: 상자 대신 괘선, 큰 활자, 넉넉한 여백 ── */
+:root[data-style='editorial'] .card {
+  border-top: 3px solid var(--ink-1);
+}
+:root[data-style='editorial'] .kpi {
+  border: 0;
+  border-top: 1px solid var(--ink-1);
+  padding: 10px 0 0;
+}
+:root[data-style='editorial'] .summary {
+  background: transparent;
+  border: 0;
+  border-top: 6px solid var(--tone);
+  border-radius: 0;
+  padding: 18px 0 6px;
+}
+:root[data-style='editorial'] .summary-notice,
+:root[data-style='editorial'] .summary-smooth,
+:root[data-style='editorial'] .summary-good {
+  --tone: var(--ink-1);
+}
+:root[data-style='editorial'] .summary-line {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+:root[data-style='editorial'] .summary-line .muted {
+  font-size: 0.55em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+:root[data-style='editorial'] .summary-item {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  padding-left: 12px;
+}
+:root[data-style='editorial'] .section-head h2 {
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  border-top: 6px solid var(--ink-1);
+  padding-top: 14px;
+}
+:root[data-style='editorial'] .incident {
+  border: 0;
+  border-top: 1px solid var(--line-strong);
+  padding: 12px 0;
+}
+:root[data-style='editorial'] .incident.is-selected {
+  border-top: 3px solid var(--ink-1);
+}
+:root[data-style='editorial'] .mini {
+  border: 0;
+  border-top: 1px solid var(--line-strong);
+  padding: 8px 0 0;
+}
+:root[data-style='editorial'] .eca-stat {
+  border: 0;
+  border-top: 1px solid var(--ink-1);
+  padding: 8px 0 0;
+}
+:root[data-style='editorial'] .tile {
+  background: #fff;
+}
+:root[data-style='editorial'] .board {
+  gap: var(--sp-8);
+  max-width: 1760px;
+}
+:root[data-style='editorial'] .row-main,
+:root[data-style='editorial'] .row-split,
+:root[data-style='editorial'] .row-voice,
+:root[data-style='editorial'] .row-voice-2,
+:root[data-style='editorial'] .col-charts,
+:root[data-style='editorial'] .voice-section {
+  gap: var(--sp-8);
+}
+:root[data-style='editorial'] .topbar {
+  background: rgba(250, 250, 249, 0.94);
+  border-bottom: 1px solid var(--ink-1);
+}
+:root[data-style='editorial'] .brand-mark {
+  background: var(--ink-1);
+  box-shadow: none;
+}
+:root[data-style='editorial'] .brand-mark rect {
+  fill: #fff;
+}
+:root[data-style='editorial'] .brand-mark rect:nth-child(3) {
+  fill: var(--tier-critical);
+}
+:root[data-style='editorial'] .contrib {
+  border-left-color: var(--ink-1);
+}
+
+/* ── 글래스: 반투명 안쪽 면, 부드러운 상단 바 ── */
+:root[data-style='glass'] .tile,
+:root[data-style='glass'] .isp-cell,
+:root[data-style='glass'] .chip,
+:root[data-style='glass'] .summary-item,
+:root[data-style='glass'] .mini {
+  background-color: var(--inset-bg);
+}
+:root[data-style='glass'] .topbar {
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+:root[data-style='glass'] .summary {
+  background: linear-gradient(100deg, color-mix(in oklab, var(--tone) 18%, transparent) 0%, transparent 60%), var(--card-bg);
+  border-color: color-mix(in oklab, var(--tone) 45%, rgba(255, 255, 255, 0.14));
+}
+/* 유리 위 큰 수치에 아주 옅은 빛 번짐 — 대비는 유지하고 깊이감만 */
+:root[data-style='glass'][data-theme='dark'] .kpi-value,
+:root[data-style='glass'][data-theme='dark'] .summary-line b {
+  text-shadow: 0 0 24px rgba(140, 170, 255, 0.25);
+}

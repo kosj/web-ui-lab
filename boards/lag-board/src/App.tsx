@@ -17,6 +17,7 @@ import { MethodNote } from './components/MethodNote';
 import { DistributionHeatmap } from './components/DistributionHeatmap';
 import { IspDrilldown } from './components/IspDrilldown';
 import { MotionContext, useMotionPref, withViewTransition } from './lib/motion';
+import { applyRootAttrs, effectiveTheme, STYLE_BY_ID, useStylePref, type StyleId } from './lib/style';
 import { useReplay } from './lib/useReplay';
 import { SignalChain } from './components/SignalChain';
 import { CouplingCard } from './components/CouplingCard';
@@ -36,10 +37,17 @@ export function App() {
   }, []);
   const { mode, toggle } = useTheme();
   const motion = useMotionPref();
+  const { style, setStyle } = useStylePref();
+  const theme = effectiveTheme(style, mode);
+  // 자식 차트가 토큰을 읽기 전에 <html> 속성이 맞아 있어야 한다 (멱등)
+  applyRootAttrs(style, theme);
   if (!model) return <Loading />;
   return (
     <MotionContext.Provider value={motion.mode}>
-      <Board m={model} theme={mode} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle} />
+      <Board
+        m={model} theme={theme} onTheme={toggle} motion={motion.mode} onMotion={motion.toggle}
+        style={style} onStyle={setStyle} themeLocked={STYLE_BY_ID[style].themes.length === 1}
+      />
     </MotionContext.Provider>
   );
 }
@@ -57,10 +65,11 @@ function worstServer(m: BoardModel, t: number) {
   return m.ds.servers.map((s) => ({ id: s.id, el: m.an[s.id].el[t] })).sort((a, b) => b.el - a.el)[0].id;
 }
 
-function Board({ m, theme, onTheme, motion, onMotion }: {
+function Board({ m, theme, onTheme, motion, onMotion, style, onStyle, themeLocked }: {
   m: BoardModel; theme: 'dark' | 'light'; onTheme: () => void; motion: 'full' | 'reduced'; onMotion: () => void;
+  style: StyleId; onStyle: (s: StyleId) => void; themeLocked: boolean;
 }) {
-  const tokens = useTokens(theme);
+  const tokens = useTokens(`${theme}|${style}`);
   const [range, setRange] = useState<RangeKey>('24h');
   const [cursor, setCursor] = useState<number | null>(null);
   const [scope, setScopeRaw] = useState<Scope>('ALL');
@@ -173,6 +182,7 @@ function Board({ m, theme, onTheme, motion, onMotion }: {
         nowTs={nowTs} cursorTs={cursorTs} range={range} onRange={changeRange} onLive={live}
         theme={theme} onTheme={onTheme} serverCount={m.ds.servers.length}
         motion={motion} onMotion={onMotion}
+        style={style} onStyle={(s) => withViewTransition(() => onStyle(s), motion === 'full')} themeLocked={themeLocked}
         replay={{
           ...replay,
           progress: replay.win && replay.pos !== null ? (replay.pos - replay.win.from) / Math.max(1, replay.win.to - replay.win.from) : 0,

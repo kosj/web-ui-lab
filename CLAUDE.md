@@ -8,9 +8,10 @@
 - `knowledge/references.md` — 출처가 달린 레퍼런스와 디자인 규칙
 - `knowledge/motion.md` — 모션 조사와 규칙 (모션을 넣거나 바꿀 때)
 - `knowledge/user-signals.md` — 채팅 제보·TCP 재전송 상관 분석 방법 (유저 신호를 다룰 때)
+- `knowledge/styles.md` — 스타일 프리셋 5종의 레퍼런스·구조·예외 (스타일을 바꾸거나 추가할 때)
 
 ## 구조
-- `design-system/` — 공용 토큰(`tokens.css`, 다크 우선), 모션 토큰(`motion.css`), 베이스 스타일
+- `design-system/` — 공용 토큰(`tokens.css`, 다크 우선), 모션 토큰(`motion.css`), 스타일 프리셋(`styles.css`), 베이스 스타일
 - `boards/<name>/` — 보드별 Vite + React + TS 앱 (ECharts)
 - `knowledge/` — 조사 노트와 학습 로그
 - `tools/ui-shot.cjs` — Playwright 시각 QA 스크린샷
@@ -28,6 +29,6 @@
 
 ## 규칙
 - UI 문구는 한국어 위주(지표 약어 p95, RTT 등은 그대로)
-- 색은 데이터와 상태에만, 크롬은 무채색. 범주색은 dataviz 검증기로 확인
+- 색은 데이터와 상태에만, 크롬은 무채색(예외: 터미널·콕핏 스타일, `knowledge/styles.md`). 범주색은 dataviz 검증기로 확인
 - 모션은 시간 흐름·상태 변화·흐름을 설명할 때만. 모션 토글(`data-motion`)과 `prefers-reduced-motion`을 반드시 따른다
 - 판별 로직을 바꾸면 시나리오 회귀 테스트가 통과해야 한다

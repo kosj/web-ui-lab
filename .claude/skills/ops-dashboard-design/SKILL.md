@@ -1,6 +1,6 @@
 ---
 name: ops-dashboard-design
-description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응) 대시보드나 보드 UI를 만들거나 고칠 때 사용. 정보 구조, 디자인 토큰, 상태·원인 색 규칙, 차트 규칙(ECharts), 모션(재생·롤링 숫자·경보 링·입자 흐름·뷰 전환), 상호작용, 시각 QA 절차를 담는다. 렉 보드 같은 게임 서비스 보드, 지표 히트맵, KPI 스트립, 장애 판정 카드, 서버 그리드를 만들 때 먼저 읽는다.
+description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응) 대시보드나 보드 UI를 만들거나 고칠 때 사용. 정보 구조, 디자인 토큰, 스타일 프리셋(그래파이트·콕핏·터미널·에디토리얼·글래스), 상태·원인 색 규칙, 차트 규칙(ECharts), 모션, 상호작용, 시각 QA 절차를 담는다. 렉 보드 같은 게임 서비스 보드, 지표 히트맵, KPI 스트립, 장애 판정 카드, 서버 그리드를 만들 때 먼저 읽는다.
 ---
 
 # 관제 대시보드 디자인 스킬
@@ -88,6 +88,17 @@ description: web-ui-lab에서 운영·관제(NOC, 라이브옵스, 장애 대응
 - **드릴다운 전환:** `withViewTransition(fn, enabled)`로 감싼다. 재생 중이거나 모션이 꺼져 있으면 즉시 적용한다.
 - **접근성:** 상단 모션 토글 하나로 모든 모션을 멈춘다(`<html data-motion>`, WCAG 2.2.2). 기본값은 `prefers-reduced-motion`을 따른다.
 - **검증:** Playwright로 재생 버튼 클릭 → 시계와 커서 transform이 진행하는지 확인한다. 캔버스는 `toDataURL()`을 두 번 비교해 모션 켜짐이면 바뀌고 꺼짐이면 그대로인지 본다. 녹화(`recordVideo`) 후 ffmpeg로 mp4·gif를 만든다.
+
+## 4-2. 스타일 프리셋 (상세: `knowledge/styles.md`)
+
+- 스타일은 `design-system/styles.css`의 `:root[data-style='x'][data-theme]` 블록이다.
+  - 색 토큰과 구조 토큰(`--font-display/num/label/chart`, `--card-*`, `--inset-*`, `--label-*`, `--num-*`, `--kpi-size`)을 함께 바꾼다.
+  - 컴포넌트 CSS는 구조 토큰만 참조한다(하드코딩한 radius·font 금지).
+- 토큰으로 안 되는 시그니처(베젤, 반전 제목, 괘선, 유리 하이라이트)만 보드의 `style-flair.css`에 둔다.
+- 단일 테마 스타일은 테마 토글을 잠근다. `<html>` 속성은 렌더 중 멱등 적용한다(`applyRootAttrs`).
+- 차트 서체는 `--font-chart`를 쓰고, 웹폰트 로딩이 끝나면 토큰을 다시 읽는다.
+- 새 스타일을 추가하면 원인 팔레트를 그 면에서 `validate_palette.js`로 검증하고, 갤러리 스크린샷을 갱신한다.
+  - 스크린샷 명령: `node tools/style-shots.cjs docs/style-gallery 1440 900 2 jpg` (`#style-<id>` × 테마)
 
 ## 5. 반응형
 

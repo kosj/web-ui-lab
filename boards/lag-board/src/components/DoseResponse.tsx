@@ -77,7 +77,7 @@ export function DoseResponse({ m, range, tokens: k, scope }: { m: BoardModel; ra
     }
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: { left: 42, right: 12, top: 30, bottom: 38 },
       ...axes(k, '체감 지연 (ms, 로그)', 50, 800, (v) => `${v}`),
       tooltip: {
@@ -117,7 +117,7 @@ export function DoseResponse({ m, range, tokens: k, scope }: { m: BoardModel; ra
     }
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: { left: 42, right: 12, top: 30, bottom: 38 },
       ...axes(k, 'TCP 재전송률 (%, 로그)', 0.05, 20, (v) => `${v}`),
       tooltip: {

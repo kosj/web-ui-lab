@@ -1,6 +1,7 @@
 /* web-ui-lab 공용 베이스 — 리셋·타이포·공용 컨트롤 */
 @import './tokens.css';
 @import './motion.css';
+@import './styles.css';
 
 *,
 *::before,

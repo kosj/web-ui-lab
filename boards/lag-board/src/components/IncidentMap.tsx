@@ -54,11 +54,11 @@ export function IncidentMap({ m, t, tokens: k, onPick }: { m: BoardModel; t: num
     const labelPos = (d: (typeof points)[number]) => (points.some((o) => o !== d && near(o, d) && o.y > d.y) ? 'left' : 'right');
     const col = { infra: k.causeInfra, network: k.causeNetwork, server: k.causeServer, client: k.causeClient } as const;
     const qText = (text: string, pos: Record<string, number | string>) => ({
-      type: 'text', ...pos, silent: true, style: { text, fill: k.ink3, font: `600 11px ${k.fontSans}` },
+      type: 'text', ...pos, silent: true, style: { text, fill: k.ink3, font: `600 11px ${k.fontChart}` },
     });
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: { left: 44, right: 24, top: 30, bottom: 40 },
       xAxis: {
         type: 'log', min: 0.5, max: 50, name: 'TCP 재전송 (평소 대비 배)', nameLocation: 'middle', nameGap: 26,

@@ -6,7 +6,7 @@ export function tooltipStyle(k: Tokens) {
     borderColor: k.lineStrong,
     borderWidth: 1,
     padding: [8, 10],
-    textStyle: { color: k.ink1, fontSize: 12, fontFamily: k.fontSans },
+    textStyle: { color: k.ink1, fontSize: 12, fontFamily: k.fontChart },
     extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);',
   };
 }

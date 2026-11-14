@@ -16,10 +16,13 @@ function read(): ThemeMode {
   return 'dark';
 }
 
+/**
+ * 사용자가 고른 테마(선호). 실제로 <html data-theme>에 쓰는 값은 스타일이 정한다 —
+ * 콕핏·터미널은 다크 전용, 에디토리얼은 라이트 전용 (lib/style.ts, App에서 적용).
+ */
 export function useTheme() {
   const [mode, setMode] = useState<ThemeMode>(read);
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', mode);
     try {
       localStorage.setItem(KEY, mode);
     } catch {
@@ -36,7 +39,7 @@ export interface Tokens {
   ink1: string; ink2: string; ink3: string; select: string;
   causeInfra: string; causeNetwork: string; causeServer: string; causeClient: string; causeBase: string;
   tierSmooth: string; tierGood: string; tierNotice: string; tierWarning: string; tierCritical: string;
-  grid: string; axis: string; fontSans: string; density0: string; density1: string;
+  grid: string; axis: string; fontSans: string; fontChart: string; density0: string; density1: string;
 }
 
 const MAP: Record<keyof Tokens, string> = {
@@ -44,7 +47,7 @@ const MAP: Record<keyof Tokens, string> = {
   ink1: '--ink-1', ink2: '--ink-2', ink3: '--ink-3', select: '--select',
   causeInfra: '--cause-infra', causeNetwork: '--cause-network', causeServer: '--cause-server', causeClient: '--cause-client', causeBase: '--cause-base',
   tierSmooth: '--tier-smooth', tierGood: '--tier-good', tierNotice: '--tier-notice', tierWarning: '--tier-warning', tierCritical: '--tier-critical',
-  grid: '--grid', axis: '--axis', fontSans: '--font-sans', density0: '--density-0', density1: '--density-1',
+  grid: '--grid', axis: '--axis', fontSans: '--font-sans', fontChart: '--font-chart', density0: '--density-0', density1: '--density-1',
 };
 
 export function readTokens(): Tokens {
@@ -54,10 +57,23 @@ export function readTokens(): Tokens {
   return out;
 }
 
-export function useTokens(mode: ThemeMode) {
+/**
+ * 테마·스타일이 바뀌면 토큰을 다시 읽는다. 스타일 서체는 처음 쓰일 때 늦게 내려오므로
+ * 글꼴 로딩이 끝나면 한 번 더 읽어 캔버스 차트가 새 서체로 다시 그려지게 한다.
+ */
+export function useTokens(key: string) {
   const [tokens, setTokens] = useState<Tokens>(() => readTokens());
   useEffect(() => {
     setTokens(readTokens());
-  }, [mode]);
+    let alive = true;
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    const reread = () => { if (alive) setTokens(readTokens()); };
+    fonts?.ready.then(reread);
+    fonts?.addEventListener?.('loadingdone', reread);
+    return () => {
+      alive = false;
+      fonts?.removeEventListener?.('loadingdone', reread);
+    };
+  }, [key]);
   return tokens;
 }

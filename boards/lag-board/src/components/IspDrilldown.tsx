@@ -164,7 +164,7 @@ function IspRegion({ m, t, range, tokens: k, isp, onIsp, region }: {
     });
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: { left: 44, right: 96, top: 26, bottom: 26 },
       ...axes,
       tooltip: {

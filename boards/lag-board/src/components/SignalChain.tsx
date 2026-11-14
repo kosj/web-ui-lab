@@ -57,7 +57,7 @@ export function SignalChain(props: { m: BoardModel; t: number; range: RangeKey; 
     });
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       axisPointer: { link: [{ xAxisIndex: 'all' }], lineStyle: { color: k.ink3 } },
       grid: grids,
       xAxis,

@@ -59,7 +59,7 @@ export function CouplingCard({ m, range, tokens: k, scope }: { m: BoardModel; ra
     };
     return {
       animation: false,
-      textStyle: { fontFamily: k.fontSans },
+      textStyle: { fontFamily: k.fontChart },
       grid: { left: 40, right: 14, top: 18, bottom: 34 },
       xAxis: {
         type: 'category', data: xs.map((x) => (x > 0 ? `+${x}` : `${x}`)), boundaryGap: false,

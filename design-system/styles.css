@@ -1,0 +1,287 @@
+/*
+ * web-ui-lab 스타일 프리셋 — <html data-style="…">로 고른다. 기본(그래파이트)은 tokens.css 그대로.
+ * 근거·비교: knowledge/styles.md
+ *
+ *  cockpit   글래스 콕핏    항공 조종석 화면 관례. B612(에어버스가 조종석 판독성용으로 만든 서체), 칠흑 배경,
+ *                           흰 수치·청록 라벨·선택은 청록, 경고 색(노랑·앰버·빨강)은 경보에만. 다크 전용.
+ *  terminal  인광 터미널    금융 터미널의 앰버 인광 화면. 크롬 전체가 앰버 단색이고 데이터만 다른 색(예외: 크롬 무채색 원칙을
+ *                           이 스타일은 의도적으로 깬다 — 단색 화면에서 데이터 색이 가장 잘 튄다). 등폭 숫자, 반전 제목 막대. 다크 전용.
+ *  editorial 에디토리얼    스위스 국제 타이포그래피 양식. 흰 종이, 상자 대신 굵은 괘선, 큰 숫자, 색은 상태에만. 라이트 전용.
+ *  glass     글래스         반투명 패널 + 블러 + 오로라 배경(2025 Liquid Glass 계열). 가독성 비판을 반영해 패널 불투명도를
+ *                           60% 이상으로 두고 글자 대비를 지킨다. 다크·라이트.
+ *
+ * 원인 4색은 스타일마다 dataviz 검증기로 확인했다 (모두 인접 CVD ΔE ≥ 8, 정상시 ΔE ≥ 15, 면 대비 3:1).
+ * 단일 테마 스타일은 [data-theme]과 무관하게 적용되도록 선택자 특이도를 (0,3,0)으로 둔다.
+ */
+
+/* ════════════════ 글래스 콕핏 ════════════════ */
+:root[data-style='cockpit'][data-theme] {
+  color-scheme: dark;
+  --bg: #020406;
+  --page-bg: #020406;
+  --surface-1: #060c11;
+  --surface-2: #0a141b;
+  --surface-3: #0f1d27;
+  --line: rgba(110, 190, 230, 0.15);
+  --line-strong: rgba(110, 190, 230, 0.32);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --ink-1: #f4f8fb;
+  --ink-2: #a9c4d1;
+  --ink-3: #6f8d9c;
+  --ink-inverse: #020406;
+  --select: #4fd6ff;
+  --focus: #4fd6ff;
+  --hover: rgba(79, 214, 255, 0.07);
+  --cause-infra: #3987e5;
+  --cause-network: #199e70;
+  --cause-server: #9085e9;
+  --cause-client: #d55181;
+  --cause-base: #15232d;
+  --tier-smooth: #0b161d;
+  --tier-good: #14303d;
+  --tier-notice: #ffd23f;
+  --tier-warning: #ff9a1f;
+  --tier-critical: #ff3b3b;
+  --tier-good-ink: #2fe37a;
+  --density-0: #060c11;
+  --density-1: #dff5ff;
+  --grid: rgba(110, 190, 230, 0.09);
+  --axis: rgba(110, 190, 230, 0.32);
+  --font-display: 'B612', var(--font-sans);
+  /* 수치는 비례폭 B612 — B612 Mono는 '.' ':'가 한 칸을 차지해 한글과 섞이면 "5. 5만"처럼 띄어 보인다 */
+  --font-num: 'B612', var(--font-sans);
+  --font-label: 'B612', var(--font-sans);
+  --font-chart: 'B612', 'Pretendard Variable', sans-serif;
+  --label-color: #5fc8ec;
+  --label-case: uppercase;
+  --label-track: 0.08em;
+  --card-bg: #060c11;
+  --card-border: 1px solid rgba(110, 190, 230, 0.18);
+  --card-radius: 3px;
+  --inset-bg: #0a141b;
+  --inset-radius: 2px;
+  --tile-radius: 2px;
+  --pill-radius: 2px;
+  --h2-size: 14px;
+  --h2-weight: 700;
+  --h2-track: 0.04em;
+  --num-weight: 400;
+  --num-track: -0.01em;
+  --kpi-size: 30px;
+}
+
+/* ════════════════ 인광 터미널 ════════════════ */
+:root[data-style='terminal'][data-theme] {
+  color-scheme: dark;
+  --bg: #000000;
+  --page-bg: #000000;
+  --surface-1: #070604;
+  --surface-2: #0d0a05;
+  --surface-3: #17110a;
+  --line: rgba(255, 176, 0, 0.16);
+  --line-strong: rgba(255, 176, 0, 0.36);
+  --scrim: rgba(0, 0, 0, 0.7);
+  --ink-1: #ffd27a;
+  --ink-2: #e0a03a;
+  --ink-3: #a5731f;
+  --ink-inverse: #000000;
+  --select: #ffffff;
+  --focus: #ffffff;
+  --hover: rgba(255, 176, 0, 0.08);
+  --cause-infra: #3987e5;
+  --cause-network: #199e70;
+  --cause-server: #9085e9;
+  --cause-client: #d55181;
+  --cause-base: #2a1d08;
+  --tier-smooth: #0f0b05;
+  --tier-good: #261b0a;
+  --tier-notice: #f2ef4f;
+  --tier-warning: #ff6b2c;
+  --tier-critical: #ff2d55;
+  --tier-good-ink: #3ddc84;
+  --density-0: #070604;
+  --density-1: #ffd27a;
+  --grid: rgba(255, 176, 0, 0.09);
+  --axis: rgba(255, 176, 0, 0.34);
+  --font-display: 'JetBrains Mono Variable', var(--font-sans);
+  --font-num: 'JetBrains Mono Variable', var(--font-sans);
+  --font-label: 'JetBrains Mono Variable', var(--font-sans);
+  --font-chart: 'JetBrains Mono Variable', 'Pretendard Variable', monospace;
+  --label-color: #c98a1e;
+  --label-case: uppercase;
+  --label-track: 0.03em;
+  --card-bg: #050402;
+  --card-border: 1px solid rgba(255, 176, 0, 0.28);
+  --card-radius: 0;
+  --inset-bg: #0b0905;
+  --inset-radius: 0;
+  --tile-radius: 0;
+  --pill-radius: 0;
+  --h2-size: 13px;
+  --h2-weight: 700;
+  --h2-track: 0.02em;
+  --num-weight: 600;
+  --num-track: -0.02em;
+  --kpi-size: 27px;
+  --pad-card: 12px 14px;
+}
+
+/* ════════════════ 에디토리얼 ════════════════ */
+:root[data-style='editorial'][data-theme] {
+  color-scheme: light;
+  --bg: #fafaf9;
+  --page-bg: #fafaf9;
+  --surface-1: #ffffff;
+  --surface-2: #f3f3f1;
+  --surface-3: #e8e8e4;
+  --line: rgba(10, 10, 10, 0.12);
+  --line-strong: rgba(10, 10, 10, 0.35);
+  --scrim: rgba(10, 10, 10, 0.3);
+  --ink-1: #0a0a0a;
+  --ink-2: #3b3b38;
+  --ink-3: #6a6a65;
+  --ink-inverse: #ffffff;
+  --select: #0a0a0a;
+  --focus: #0047ff;
+  --hover: rgba(10, 10, 10, 0.04);
+  --cause-infra: #1f5fbf;
+  --cause-network: #0f8a6a;
+  --cause-server: #5b45c9;
+  --cause-client: #c43d7a;
+  --cause-base: #e4e4e0;
+  --tier-smooth: #efefec;
+  --tier-good: #d9d9d4;
+  --tier-notice: #f2b705;
+  --tier-warning: #ee6a1f;
+  --tier-critical: #d6001c;
+  --tier-good-ink: #1f7a3a;
+  --density-0: #ffffff;
+  --density-1: #0a0a0a;
+  --grid: rgba(10, 10, 10, 0.07);
+  --axis: rgba(10, 10, 10, 0.55);
+  --font-display: 'Inter Tight Variable', var(--font-sans);
+  --font-num: 'Inter Tight Variable', var(--font-sans);
+  --font-label: 'Inter Tight Variable', var(--font-sans);
+  --font-chart: 'Inter Variable', 'Pretendard Variable', sans-serif;
+  --label-color: #0a0a0a;
+  --label-case: uppercase;
+  --label-track: 0.09em;
+  --card-bg: transparent;
+  --card-border: 0;
+  --card-radius: 0;
+  --card-shadow: none;
+  --inset-bg: transparent;
+  --inset-radius: 0;
+  --tile-radius: 0;
+  --pill-radius: 2px;
+  --h2-size: 21px;
+  --h2-weight: 800;
+  --h2-track: -0.025em;
+  --num-weight: 600;
+  --num-track: -0.045em;
+  --kpi-size: 46px;
+  --pad-card: 14px 0 0;
+}
+
+/* ════════════════ 글래스 ════════════════ */
+:root[data-style='glass'][data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #070a14;
+  --page-bg: radial-gradient(1100px 760px at 6% -14%, rgba(64, 110, 255, 0.5), transparent 62%),
+    radial-gradient(900px 680px at 98% 4%, rgba(170, 80, 255, 0.38), transparent 60%),
+    radial-gradient(1000px 700px at 70% 55%, rgba(255, 90, 140, 0.12), transparent 60%),
+    radial-gradient(1200px 900px at 40% 115%, rgba(20, 180, 170, 0.3), transparent 60%), #060914;
+  --surface-1: #121726;
+  --surface-2: #181e31;
+  --surface-3: #222a42;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --ink-1: #f6f8ff;
+  --ink-2: #bcc4dc;
+  --ink-3: #8a93ae;
+  --ink-inverse: #070a14;
+  --select: #ffffff;
+  --focus: #8ab8ff;
+  --hover: rgba(255, 255, 255, 0.06);
+  --cause-infra: #2f86f5;
+  --cause-network: #1aa38a;
+  --cause-server: #a35ee0;
+  --cause-client: #e5576f;
+  --cause-base: #283049;
+  --tier-smooth: #19203a;
+  --tier-good: #262f4c;
+  --tier-notice: #ffd60a;
+  --tier-warning: #ff9f0a;
+  --tier-critical: #ff453a;
+  --tier-good-ink: #30d158;
+  --density-0: #121726;
+  --density-1: #eaf0ff;
+  --grid: rgba(255, 255, 255, 0.07);
+  --axis: rgba(255, 255, 255, 0.24);
+  --font-display: 'Inter Variable', var(--font-sans);
+  --font-num: 'Inter Variable', var(--font-sans);
+  --font-chart: 'Inter Variable', 'Pretendard Variable', sans-serif;
+  --card-bg: rgba(18, 22, 38, 0.6);
+  --card-border: 1px solid rgba(255, 255, 255, 0.12);
+  --card-radius: 22px;
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 24px 48px rgba(0, 0, 0, 0.35);
+  --card-blur: blur(22px) saturate(160%);
+  --inset-bg: rgba(255, 255, 255, 0.045);
+  --inset-radius: 14px;
+  --tile-radius: 12px;
+  --pill-radius: 999px;
+  --h2-weight: 600;
+  --num-weight: 600;
+  --num-track: -0.025em;
+  --kpi-size: 32px;
+}
+:root[data-style='glass'][data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef1f8;
+  --page-bg: radial-gradient(1100px 700px at 6% -10%, rgba(90, 140, 255, 0.28), transparent 62%),
+    radial-gradient(900px 640px at 96% 4%, rgba(200, 120, 255, 0.22), transparent 60%),
+    radial-gradient(1200px 900px at 50% 115%, rgba(40, 200, 180, 0.18), transparent 60%), #eef1f8;
+  --surface-1: #ffffff;
+  --surface-2: #f5f7fc;
+  --surface-3: #e9edf6;
+  --line: rgba(20, 30, 60, 0.1);
+  --line-strong: rgba(20, 30, 60, 0.2);
+  --ink-1: #0c1222;
+  --ink-2: #414b63;
+  --ink-3: #626c84;
+  --ink-inverse: #ffffff;
+  --select: #0c1222;
+  --focus: #0a6cff;
+  --hover: rgba(20, 30, 60, 0.05);
+  --cause-infra: #007aff;
+  --cause-network: #0f9d84;
+  --cause-server: #a54fd6;
+  --cause-client: #e8476b;
+  --cause-base: #dde3ef;
+  --tier-smooth: #e8ecf5;
+  --tier-good: #d4dbea;
+  --tier-notice: #ffcc00;
+  --tier-warning: #ff9500;
+  --tier-critical: #ff3b30;
+  --tier-good-ink: #248a3d;
+  --density-0: #ffffff;
+  --density-1: #0c1222;
+  --grid: rgba(20, 30, 60, 0.07);
+  --axis: rgba(20, 30, 60, 0.25);
+  --font-display: 'Inter Variable', var(--font-sans);
+  --font-num: 'Inter Variable', var(--font-sans);
+  --font-chart: 'Inter Variable', 'Pretendard Variable', sans-serif;
+  --card-bg: rgba(255, 255, 255, 0.66);
+  --card-border: 1px solid rgba(255, 255, 255, 0.85);
+  --card-radius: 22px;
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px rgba(30, 40, 80, 0.12);
+  --card-blur: blur(22px) saturate(160%);
+  --inset-bg: rgba(255, 255, 255, 0.55);
+  --inset-radius: 14px;
+  --tile-radius: 12px;
+  --pill-radius: 999px;
+  --h2-weight: 600;
+  --num-weight: 600;
+  --num-track: -0.025em;
+  --kpi-size: 32px;
+}

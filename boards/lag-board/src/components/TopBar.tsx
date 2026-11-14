@@ -3,6 +3,8 @@ import { dateLabel, hhmm } from '../lib/format';
 import { RANGE_LABEL, type RangeKey } from '../lib/view';
 import type { ThemeMode } from '../lib/theme';
 import { REPLAY_SPEEDS, type ReplaySpeed } from '../lib/useReplay';
+import type { StyleId } from '../lib/style';
+import { StyleMenu } from './StyleMenu';
 
 export interface ReplayControls {
   playing: boolean;
@@ -29,8 +31,11 @@ export function TopBar(props: {
   motion: 'full' | 'reduced';
   onMotion: () => void;
   replay: ReplayControls;
+  style: StyleId;
+  onStyle: (s: StyleId) => void;
+  themeLocked: boolean;
 }) {
-  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount, motion, onMotion, replay } = props;
+  const { nowTs, cursorTs, range, onRange, onLive, theme, onTheme, serverCount, motion, onMotion, replay, style, onStyle, themeLocked } = props;
   const live = cursorTs === null && !replay.active;
   return (
     <header className={`topbar ${replay.active ? 'is-replaying' : ''}`}>
@@ -97,7 +102,7 @@ export function TopBar(props: {
           <span className="clock live">
             <Radio size={14} strokeWidth={2.2} aria-hidden />
             <b>LIVE</b>
-            <span className="num">{dateLabel(nowTs)} {hhmm(nowTs)} KST</span>
+            <span className="num"><span className="clock-date">{dateLabel(nowTs)} </span>{hhmm(nowTs)} KST</span>
           </span>
         ) : (
           <span className="clock past">
@@ -116,7 +121,15 @@ export function TopBar(props: {
         >
           <Sparkles size={16} />
         </button>
-        <button type="button" className="icon-btn" onClick={onTheme} aria-label={theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환'}>
+        <StyleMenu style={style} onStyle={onStyle} />
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={onTheme}
+          disabled={themeLocked}
+          aria-label={themeLocked ? `이 스타일은 ${theme === 'dark' ? '다크' : '라이트'} 전용` : theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환'}
+          title={themeLocked ? `이 스타일은 ${theme === 'dark' ? '다크' : '라이트'} 전용입니다` : undefined}
+        >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>

@@ -61,7 +61,7 @@ function metricOption(k: Tokens, labels: string[], minutes: number[], labelEvery
     animationDuration: 450,
     animationDurationUpdate: 450,
     animationEasingUpdate: 'cubicInOut' as const,
-    textStyle: { fontFamily: k.fontSans },
+    textStyle: { fontFamily: k.fontChart },
     grid: { left: 40, right: 10, top: 10, bottom: 24 },
     ...axes,
     yAxis: { ...axes.yAxis, min: 0, max: hLine ? (v: { max: number }) => niceCeil(Math.max(v.max, hLine.v * 1.25)) : undefined },
