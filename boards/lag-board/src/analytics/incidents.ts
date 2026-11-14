@@ -17,8 +17,8 @@ import type { Dataset } from '../data/generate';
 
 export interface Evidence {
   text: string;
-  /** 판정을 지지(true)하는 근거인지, 반대 원인을 배제하는 근거인지 */
-  kind: 'signal' | 'scope' | 'exclude';
+  /** 신호(지지) · 범위 · 배제 · 유저 제보 */
+  kind: 'signal' | 'scope' | 'exclude' | 'voice';
 }
 
 export interface IspContribution {
@@ -50,6 +50,8 @@ export interface Incident {
   confidence: number;
   evidence: Evidence[];
   title: string;
+  /** 유저 제보·TCP 재전송 근거 (signals.attachVoice) */
+  voice?: import('./signals').VoiceEvidence;
 }
 
 const REGION_NAME = Object.fromEntries(REGIONS.map((r) => [r.id, r.name])) as Record<RegionId, string>;

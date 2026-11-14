@@ -4,6 +4,7 @@ import {
 } from './config';
 import { clamp, gaussian, mulberry32 } from '../analytics/stats';
 import { fromP50P95, mixtureQuantile } from '../analytics/lognormal';
+import { generateChat, type ChatMetrics } from './chat';
 
 export interface ServerDef {
   id: string; // KR-01
@@ -29,6 +30,8 @@ export interface ServerMetrics {
   frameNew: Float32Array; // 신버전 클라 프레임타임 p95 (ms)
   newShare: Float32Array; // 신버전 클라 비율 0..1
   frameP95: Float32Array; // 서버 접속 유저 전체 프레임타임 p95 (ms)
+  retrans: Float32Array; // TCP 재전송률 (%) — 서버 커널 카운터 (예: TcpRetransSegs / OutSegs)
+  rtoShare: Float32Array; // 재전송 중 RTO 비율 0..1
 }
 
 /** 권역 × 통신사 경로 지표 — 유저 → 권역 DC 네트워크 경로 (서버 공통) */
@@ -37,6 +40,10 @@ export interface IspPath {
   rttP95: Float32Array;
   jitter: Float32Array;
   loss: Float32Array;
+  /** TCP 재전송률 (%) = 재전송 세그먼트 / 전송 세그먼트 */
+  retrans: Float32Array;
+  /** 재전송 중 RTO(타임아웃) 재전송 비율 0..1 — 빠른 재전송보다 훨씬 긴 정지를 만든다 */
+  rtoShare: Float32Array;
 }
 
 export interface Dataset {
@@ -49,6 +56,8 @@ export interface Dataset {
   isp: Record<RegionId, Record<string, IspPath>>;
   /** 서버별 통신사 유저 비중 (REGION_ISPS[region] 순서, 합 1) */
   ispShare: Record<string, number[]>;
+  /** 서버(채팅 채널)별 렉 제보 */
+  chat: Record<string, ChatMetrics>;
 }
 
 /** MMO 동접 일주기: 새벽 5시 반 최저, 밤 9시 반 최고 */
@@ -108,7 +117,7 @@ function generateIspPaths(rand: () => number, times: Float64Array) {
     out[r.id] = {};
     const scen = SCENARIOS.filter((s) => s.cause === 'network' && s.target.region === r.id);
     for (const isp of REGION_ISPS[r.id]) {
-      const p: IspPath = { rttP50: alloc(), rttP95: alloc(), jitter: alloc(), loss: alloc() };
+      const p: IspPath = { rttP50: alloc(), rttP95: alloc(), jitter: alloc(), loss: alloc(), retrans: alloc(), rtoShare: alloc() };
       const farJitter = 1 + isp.rttP50 / 100;
       for (let t = 0; t < TOTAL_MIN; t++) {
         const ts = times[t];
@@ -139,6 +148,9 @@ function generateIspPaths(rand: () => number, times: Float64Array) {
         p.rttP95[t] = Math.max(rtt50 + 2, rtt95);
         p.jitter[t] = Math.max(0, jitter);
         p.loss[t] = clamp(loss, 0, 100);
+        // TCP 재전송: 손실(버스트 손실은 세그먼트 여러 개를 다시 보냄) + 지연 급변에 따른 가짜(spurious) 재전송
+        p.retrans[t] = 0.06 + 0.04 * load + 1.15 * p.loss[t] + Math.max(0, p.jitter[t] - 15) * 0.02 + Math.abs(gaussian(rand)) * 0.01;
+        p.rtoShare[t] = clamp(0.08 + 0.12 * p.loss[t], 0, 0.7);
       }
       out[r.id][isp.id] = p;
     }
@@ -182,7 +194,7 @@ export function generateDataset(seed = 20261114): Dataset {
     const m: ServerMetrics = {
       ccu: alloc(), rttP50: alloc(), rttP95: alloc(), jitter: alloc(), loss: alloc(),
       tickP99: alloc(), steal: alloc(), ioWait: alloc(), frameOld: alloc(), frameNew: alloc(),
-      newShare: alloc(), frameP95: alloc(),
+      newShare: alloc(), frameP95: alloc(), retrans: alloc(), rtoShare: alloc(),
     };
     // 서버별 개성: 인프라 장애 시 영향 편차, 틱 기본값 편차
     const infraSens = 0.8 + rand() * 0.45;
@@ -206,9 +218,13 @@ export function generateDataset(seed = 20261114): Dataset {
       // 2단계: 서버 네트워크 지표 = 이 서버 유저의 통신사 경로 혼합
       let jitter = 0;
       let loss = 0;
+      let retrans = 0;
+      let rto = 0;
       paths.forEach((p, i) => {
         jitter += shares[i] * p.jitter[t];
         loss += shares[i] * p.loss[t];
+        retrans += shares[i] * p.retrans[t];
+        rto += shares[i] * p.retrans[t] * p.rtoShare[t];
       });
       let rtt50 = q.p50[t] + gaussian(rand) * 0.4;
       let rtt95 = q.p95[t] + Math.abs(gaussian(rand)) * 1.0;
@@ -235,6 +251,8 @@ export function generateDataset(seed = 20261114): Dataset {
           steal += 22 * I * infraSens + gaussian(rand) * 1.5 * I;
           io += 14 * I * infraSens + Math.abs(gaussian(rand)) * 2 * I;
           tick += 85 * I * infraSens * (0.9 + 0.2 * rand());
+          // 호스트 경합 → ACK 지연으로 소량의 재전송 (네트워크 장애에 비하면 미미)
+          retrans += 0.03 * I;
           churn = Math.max(churn, 0.08 * I);
         } else if (s.cause === 'client') {
           frameNew = 20 + 46 * I + Math.abs(gaussian(rand)) * 5;
@@ -261,11 +279,15 @@ export function generateDataset(seed = 20261114): Dataset {
       m.frameNew[t] = share > 0 ? frameNew : NaN;
       m.newShare[t] = share;
       m.frameP95[t] = frameP95;
+      m.retrans[t] = Math.max(0, retrans + Math.abs(gaussian(rand)) * 0.005);
+      m.rtoShare[t] = retrans > 0 ? clamp(rto / retrans, 0, 1) : 0;
     }
     metrics[sv.id] = m;
   }
 
-  return { start: START, minutes: TOTAL_MIN, times, servers, metrics, isp, ispShare };
+  const ds: Dataset = { start: START, minutes: TOTAL_MIN, times, servers, metrics, isp, ispShare, chat: {} };
+  ds.chat = generateChat(ds, rand);
+  return ds;
 }
 
 export { NEW_CLIENT_VERSION };

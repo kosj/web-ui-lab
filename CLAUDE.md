@@ -7,6 +7,7 @@
 - 관련 스킬: `.claude/skills/ops-dashboard-design` (UI), `.claude/skills/lag-analytics` (렉 지표·원인 판별)
 - `knowledge/references.md` — 출처가 달린 레퍼런스와 디자인 규칙
 - `knowledge/motion.md` — 모션 조사와 규칙 (모션을 넣거나 바꿀 때)
+- `knowledge/user-signals.md` — 채팅 제보·TCP 재전송 상관 분석 방법 (유저 신호를 다룰 때)
 
 ## 구조
 - `design-system/` — 공용 토큰(`tokens.css`, 다크 우선), 모션 토큰(`motion.css`), 베이스 스타일

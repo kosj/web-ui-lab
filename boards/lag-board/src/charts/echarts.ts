@@ -1,14 +1,14 @@
 import * as echarts from 'echarts/core';
-import { CustomChart, HeatmapChart, LineChart } from 'echarts/charts';
+import { BarChart, CustomChart, HeatmapChart, LineChart, ScatterChart } from 'echarts/charts';
 import {
-  AxisPointerComponent, GridComponent, MarkAreaComponent, MarkLineComponent,
+  AxisPointerComponent, GraphicComponent, GridComponent, MarkAreaComponent, MarkLineComponent, MarkPointComponent,
   TooltipComponent, VisualMapComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 
 echarts.use([
-  LineChart, HeatmapChart, CustomChart, GridComponent, TooltipComponent, VisualMapComponent,
-  MarkLineComponent, MarkAreaComponent, AxisPointerComponent, CanvasRenderer,
+  LineChart, HeatmapChart, CustomChart, BarChart, ScatterChart, GridComponent, TooltipComponent, VisualMapComponent,
+  MarkLineComponent, MarkAreaComponent, MarkPointComponent, GraphicComponent, AxisPointerComponent, CanvasRenderer,
 ]);
 
 export { echarts };

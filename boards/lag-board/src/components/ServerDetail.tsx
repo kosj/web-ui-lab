@@ -11,6 +11,7 @@ import { CauseBadge, TierPill } from './Badges';
 import { ChartCursor } from '../charts/ChartCursor';
 import { useMotionOn } from '../lib/motion';
 import { RollingNumber } from './RollingNumber';
+import { getSignals } from '../analytics/signals';
 
 interface LineSpec {
   name: string;
@@ -118,6 +119,7 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
   const motion = useMotionOn();
   const cursor = Math.floor((t - from) / bin);
 
+  const sig = getSignals(m, { serverId });
   const built = useMemo(() => {
     const starts: number[] = [];
     for (let s = from; s <= to; s += bin) starts.push(s);
@@ -150,12 +152,20 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
         { name: 'I/O 대기', data: b(mx.ioWait), color: k.ink2, width: 1.5 },
         { name: 'CPU steal', data: b(mx.steal), color: k.causeInfra },
       ]),
+      retrans: mo('%', [
+        { name: '전일', data: b(sig.retransBase), color: k.ink3, width: 1.5, reference: true },
+        { name: 'TCP 재전송', data: b(mx.retrans), color: k.causeNetwork },
+      ]),
+      reports: mo('', [
+        { name: '평소 기대', data: b(sig.expectedRate), color: k.ink3, width: 1.5, reference: true },
+        { name: '렉 제보 /1만', data: b(sig.rate), color: k.ink1 },
+      ]),
       frame: mo('ms', [
         { name: OLD_CLIENT_VERSION, data: b(mx.frameOld), color: k.ink2, width: 1.5 },
         { name: NEW_CLIENT_VERSION, data: b(mx.frameNew), color: k.causeClient },
       ], { v: 50, label: '스톨 50ms', color: k.tierNotice }),
     };
-  }, [m, a, mx, from, to, bin, k, labelEvery, motion]);
+  }, [m, a, mx, sig, from, to, bin, k, labelEvery, motion]);
 
   const decomp = useChart(built.decomp, { group, merge: true });
 
@@ -189,6 +199,8 @@ export function ServerDetail({ m, t, range, tokens: k, serverId }: { m: BoardMod
         <Mini group={group} cursor={cursor} title="서버 틱 p99" sub="ms · 20Hz" option={built.tick} />
         <Mini group={group} cursor={cursor} title="호스트 자원" sub="CPU steal · I/O 대기 %" option={built.host} />
         <Mini group={group} cursor={cursor} title="클라 프레임 p95" sub="버전별 ms" option={built.frame} />
+        <Mini group={group} cursor={cursor} title="TCP 재전송" sub="% · 손실 → HOL 블로킹" option={built.retrans} />
+        <Mini group={group} cursor={cursor} title="채팅 렉 제보" sub="1만 채팅 유저당/분" option={built.reports} />
       </div>
       <div className="detail-legend">
         <LegendRow items={[

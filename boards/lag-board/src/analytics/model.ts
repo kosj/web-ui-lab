@@ -5,6 +5,7 @@
 import { analyzeServer, applyTopologyRule, type ServerAnalysis } from './attribution';
 import { detectIncidents, type Incident } from './incidents';
 import { analyzeIsps, type IspModel } from './isp';
+import { attachVoice, detectBlindSpots, type BlindSpot } from './signals';
 import { weightedQuantile } from './stats';
 import { generateDataset, type Dataset } from '../data/generate';
 import { REGIONS, THRESHOLDS, WARMUP_MIN, type Cause, type RegionId } from '../data/config';
@@ -29,6 +30,8 @@ export interface BoardModel {
   an: Record<string, ServerAnalysis>;
   incidents: Incident[];
   isp: IspModel;
+  /** 제보만 급증하고 지표는 정상인 구간 */
+  blindSpots: BlindSpot[];
   regions: Record<RegionId, AggSeries>;
   global: AggSeries;
 }
@@ -88,7 +91,10 @@ export function buildModel(seed?: number): BoardModel {
     regions[r.id] = aggregate(ds, an, ds.servers.filter((s) => s.region === r.id).map((s) => s.id), viewFrom);
   }
   const global = aggregate(ds, an, ds.servers.map((s) => s.id), viewFrom);
-  return { ds, viewFrom, last: ds.minutes - 1, an, incidents, isp, regions, global };
+  const model: BoardModel = { ds, viewFrom, last: ds.minutes - 1, an, incidents, isp, regions, global, blindSpots: [] };
+  attachVoice(model);
+  model.blindSpots = detectBlindSpots(model, viewFrom);
+  return model;
 }
 
 export function isActiveAt(inc: Incident, t: number) {

@@ -18,6 +18,12 @@ import { DistributionHeatmap } from './components/DistributionHeatmap';
 import { IspDrilldown } from './components/IspDrilldown';
 import { MotionContext, useMotionPref, withViewTransition } from './lib/motion';
 import { useReplay } from './lib/useReplay';
+import { SignalChain } from './components/SignalChain';
+import { CouplingCard } from './components/CouplingCard';
+import { IncidentMap } from './components/IncidentMap';
+import { DoseResponse } from './components/DoseResponse';
+import { ChatStream } from './components/ChatStream';
+import type { BlindSpot, SignalScope } from './analytics/signals';
 
 type Scope = 'ALL' | RegionId;
 
@@ -140,6 +146,14 @@ function Board({ m, theme, onTheme, motion, onMotion }: {
   }, [vt]);
 
   const onCursor = useCallback((idx: number) => manual(() => setCursor(idx >= m.last ? null : idx)), [m, manual]);
+  const onBlind = useCallback((b: BlindSpot) => manual(() => {
+    setSelectedInc(b.id);
+    setScope(b.region);
+    setServer(b.serverIds[0]);
+    const mid = Math.min(m.last, b.onsetIdx + 15);
+    if (mid < rangeIdx(m, range).from) setRange('24h');
+    setCursor(b.endIdx === null ? null : mid);
+  }), [m, manual, range, setScope]);
   const live = useCallback(() => manual(() => setCursor(null)), [manual]);
   const selectServer = useCallback((id: string) => vt(() => setServer(id)), [vt]);
   const chooseScope = useCallback((s: Scope) => vt(() => setScope(s)), [vt, setScope]);
@@ -151,6 +165,7 @@ function Board({ m, theme, onTheme, motion, onMotion }: {
     ...REGIONS.map((r) => ({ key: r.id as Scope, label: r.name, v: m.regions[r.id].p95[t] })),
   ], [m, t]);
   const sel = serverNow(m, server, t);
+  const signalScope = useMemo<SignalScope>(() => (scope === 'ALL' ? {} : { region: scope }), [scope]);
 
   return (
     <div className="app">
@@ -192,8 +207,24 @@ function Board({ m, theme, onTheme, motion, onMotion }: {
             <RegionHeatmap m={m} t={t} range={range} tokens={tokens} region={scope} onCell={onCell} onIncident={pickIncident} />
             <CauseBreakdown m={m} t={t} range={range} tokens={tokens} scope={scope} onCursor={onCursor} />
           </div>
-          <IncidentList m={m} t={t} region={scope} selectedId={selectedInc} onPick={pickIncident} onReplay={replayIncident} />
+          <IncidentList m={m} t={t} region={scope} selectedId={selectedInc} onPick={pickIncident} onReplay={replayIncident} onBlind={onBlind} />
         </div>
+
+        <section className="voice-section" aria-labelledby="voice-title">
+          <div className="section-head">
+            <h2 id="voice-title">유저 체감 신호</h2>
+            <p>채팅 렉 제보가 TCP 재전송·체감 지연과 함께 움직이는지 봅니다. 모든 비교는 전일 동시간대 대비 편차로 합니다 — 원값끼리는 저녁 피크 때문에 허위 상관이 생깁니다.</p>
+          </div>
+          <div className="row-voice">
+            <SignalChain m={m} t={t} range={range} tokens={tokens} scope={signalScope} onCursor={onCursor} />
+            <CouplingCard m={m} range={range} tokens={tokens} scope={signalScope} />
+          </div>
+          <div className="row-voice-2">
+            <IncidentMap m={m} t={t} tokens={tokens} onPick={pickIncident} />
+            <DoseResponse m={m} range={range} tokens={tokens} scope={signalScope} />
+            <ChatStream m={m} t={t} scope={signalScope} />
+          </div>
+        </section>
 
         <div className="row-split">
           <IspDrilldown m={m} t={t} range={range} tokens={tokens} scope={scope} isp={isp} onIsp={onIsp} />

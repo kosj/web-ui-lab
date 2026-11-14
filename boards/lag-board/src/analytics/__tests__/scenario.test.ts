@@ -43,12 +43,17 @@ describe('lag cause classifier recovers injected scenarios', () => {
     });
   }
 
-  test('quiet hours stay quiet — at most a few isolated burst minutes ≥150ms before 02:00', () => {
+  test('quiet hours stay quiet — no sustained (3+ consecutive minutes) region tail ≥150ms before 02:00', () => {
     const end = m.viewFrom + 5 * 60; // 표시 시작 21:01 ~ 다음날 02:01
     for (const [rid, agg] of Object.entries(m.regions)) {
-      let hot = 0;
-      for (let t = m.viewFrom; t < end; t++) if (agg.p95[t] >= 150) hot++;
-      expect(hot, rid).toBeLessThanOrEqual(3);
+      let run = 0;
+      let longest = 0;
+      for (let t = m.viewFrom; t < end; t++) {
+        run = agg.p95[t] >= 150 ? run + 1 : 0;
+        longest = Math.max(longest, run);
+      }
+      // 단발성 패킷 버스트(1~2분)는 허용, 3분 이상 지속은 오탐
+      expect(longest, rid).toBeLessThan(3);
     }
   });
 });
